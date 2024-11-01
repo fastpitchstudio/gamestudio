@@ -1,0 +1,14 @@
+{
+    "git": {
+      "deploymentEnabled": {
+        "main": true
+      }
+    },
+    "functions": {
+      "src/app/**/*": {
+        "memory": 1024,
+        "maxDuration": 10
+      }
+    },
+    "crons": []
+  }
