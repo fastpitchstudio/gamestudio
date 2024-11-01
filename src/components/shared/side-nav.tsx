@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -47,7 +49,7 @@ export function SideNav() {
           href="/dashboard"
           className="flex items-center gap-2 font-semibold"
         >
-          <span className="text-2xl">⚾</span>
+          <span className="text-2xl">🥎</span>
           Game Studio
         </Link>
       </div>

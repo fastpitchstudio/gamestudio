@@ -1,43 +1,67 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  try {
-    const res = NextResponse.next()
-    const supabase = createMiddlewareClient({ req: request, res })
-    
-    // Refresh the session
-    await supabase.auth.getSession()
+  const response = NextResponse.next()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const path = request.nextUrl.pathname
-
-    console.log(`🚀 Middleware - Path: ${path}, User: ${user?.email ?? 'none'}`)
-
-    // Protected routes
-    if (path.startsWith('/dashboard')) {
-      if (!user) {
-        console.log('🔒 Redirecting to login - No user found')
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
     }
+  )
 
-    // Auth routes - redirect to dashboard if already authenticated
-    if (user && (
-      path === '/login' ||
-      path === '/signup' ||
-      path === '/'
-    )) {
-      console.log('👉 Redirecting to dashboard - User is authenticated')
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Log the current state
+  console.log(`🚀 Path: ${request.nextUrl.pathname} | User: ${user?.email ?? 'none'}`)
+
+  // Handle protected routes
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
     }
-
-    return res
-  } catch (error) {
-    console.error('❌ Middleware error:', error)
-    return NextResponse.next()
   }
+
+  // Handle auth routes
+  if (user && (
+    request.nextUrl.pathname === '/login' ||
+    request.nextUrl.pathname === '/signup' ||
+    request.nextUrl.pathname === '/'
+  )) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  return response
 }
 
 export const config = {

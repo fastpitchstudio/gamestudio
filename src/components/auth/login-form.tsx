@@ -33,19 +33,15 @@ export function LoginForm() {
     try {
       const supabase = createClient()
       
-      console.log('Attempting to sign in...')
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
   
-      if (error) {
-        throw error
-      }
+      if (error) throw error
   
       if (data.session) {
-        // Force a hard navigation
+        // Force page refresh
         window.location.href = '/dashboard'
       }
     } catch (error) {
