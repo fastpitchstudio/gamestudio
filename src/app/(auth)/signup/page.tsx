@@ -78,7 +78,7 @@ export default function SignUpPage() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">⚾</span>
+          <span className="text-2xl">🥎</span>
           <span className="text-xl font-bold">Game Studio</span>
         </div>
         <CardTitle>Create an account</CardTitle>

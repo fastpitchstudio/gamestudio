@@ -45,7 +45,7 @@ export default function LoginPage() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">⚾</span>
+          <span className="text-2xl">🥎</span>
           <span className="text-xl font-bold">Game Studio</span>
         </div>
         <CardTitle>Welcome back</CardTitle>
@@ -90,7 +90,7 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
           <div className="text-sm text-slate-500 text-center">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/signup" className="text-slate-900 hover:underline">
               Sign up
             </Link>

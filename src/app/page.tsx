@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, CookieOptions } from '@supabase/ssr'
 
 export default async function RootPage() {
   const cookieStore = await cookies()
@@ -14,11 +14,11 @@ export default async function RootPage() {
           const cookie = cookieStore.get(name)
           return cookie?.value
         },
-        set(name: string, value: string, options: any) {
+        set(_name: string, _value: string, _options: CookieOptions) {
           // Next.js cookies() doesn't support setting cookies in Server Components
           // This is handled by the middleware
         },
-        remove(name: string, options: any) {
+        remove(_name: string, _options: CookieOptions) {
           // Next.js cookies() doesn't support removing cookies in Server Components
           // This is handled by the middleware
         },
