@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Recommended settings for production
   reactStrictMode: true,
-  swcMinify: true,
   poweredByHeader: false,
   images: {
     domains: [], // Add any image domains you need
