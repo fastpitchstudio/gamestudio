@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
     )
 
     // Get the user from Supabase
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()  // Removed unused 'error'
     const path = request.nextUrl.pathname
 
     // Log for debugging
@@ -83,7 +83,6 @@ export async function middleware(request: NextRequest) {
   }
 }
 
-// Update matcher to be more specific about which routes to handle
 export const config = {
   matcher: [
     /*
