@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run clean && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean:local": "rm -rf .next",
+    "build:local": "npm run clean:local && next build"
   },
   "engines": {
     "node": ">=18.0.0"
