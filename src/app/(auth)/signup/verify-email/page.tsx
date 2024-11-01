@@ -16,13 +16,13 @@ export default function VerifyEmailPage() {
         </div>
         <CardTitle>Check your email</CardTitle>
         <CardDescription>
-          We've sent you an email with a link to verify your account.
+          We&apos;ve sent you an email with a link to verify your account.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-slate-500">
           Click the link in the email to complete your registration.
-          If you don't see the email, check your spam folder.
+          If you don&apos;t see the email, check your spam folder.
         </p>
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
