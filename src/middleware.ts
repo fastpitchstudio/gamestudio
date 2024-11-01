@@ -2,70 +2,97 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next()
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
+  try {
+    const requestHeaders = new Headers(request.headers)
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
       },
+    })
+
+    // Create a Supabase client
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+          },
+          remove(name: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+          },
+        },
+      }
+    )
+
+    // Get the user from Supabase
+    const { data: { user }, error } = await supabase.auth.getUser()
+    const path = request.nextUrl.pathname
+
+    // Log for debugging
+    console.log(`Path: ${path}, User: ${user?.email ?? 'none'}`)
+
+    // Protected routes
+    if (path.startsWith('/dashboard')) {
+      if (!user) {
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
     }
-  )
 
-  const { data: { user } } = await supabase.auth.getUser()
+    // Auth routes - redirect to dashboard if already authenticated
+    if (user && (
+      path === '/login' ||
+      path === '/signup' ||
+      path === '/'
+    )) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
 
-  // Log the current state
-  console.log(`🚀 Path: ${request.nextUrl.pathname} | User: ${user?.email ?? 'none'}`)
-
-  // Handle protected routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!user) {
+    return response
+  } catch (error) {
+    console.error('Middleware error:', error)
+    
+    // On error, redirect to login for protected routes, otherwise continue
+    if (request.nextUrl.pathname.startsWith('/dashboard')) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
+    
+    return NextResponse.next()
   }
-
-  // Handle auth routes
-  if (user && (
-    request.nextUrl.pathname === '/login' ||
-    request.nextUrl.pathname === '/signup' ||
-    request.nextUrl.pathname === '/'
-  )) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  return response
 }
 
+// Update matcher to be more specific about which routes to handle
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
