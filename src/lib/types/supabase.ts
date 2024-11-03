@@ -53,16 +53,6 @@ export type WithCreatedAt = {
   created_at: string
 }
 
-// Relationship types (only export the ones we actually use)
-export interface WithPlayers<T> {
-  players: Player
-}
-
-// You can uncomment these if you need them in other files
-// export interface WithTeam<T> {
-//   teams: Team
-// }
-
 // Function return types
 export type QueryResult<T> = Promise<T>
 export type QueryArrayResult<T> = Promise<T[]>

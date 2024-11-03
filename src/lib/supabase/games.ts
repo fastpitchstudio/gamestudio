@@ -1,170 +1,204 @@
-// src/lib/supabase/games.ts
+// src/lib/supabase/teams.ts
 import { supabase } from './index'
 import type { 
-  Game, 
-  InsertGame, 
-  UpdateGame, 
-  GameLineup,
-  GameHighlight,
-  Player,
+  Team, 
+  InsertTeam, 
+  UpdateTeam,
+  CoachProfile,
   QueryResult,
-  QueryArrayResult,
-  WithPlayers
+  QueryArrayResult
 } from '@/lib/types'
 
-// Define specific types for nested queries
-interface LineupWithPlayer extends GameLineup {
-  players: Player
-}
-
-interface GameWithRelations extends Game {
-  game_lineups: LineupWithPlayer[]
-  game_highlights: GameHighlight[]
-}
-
-/**
- * Get a single game with all related data
- */
-export async function getGame(gameId: string): QueryResult<GameWithRelations> {
-  const { data, error } = await supabase
-    .from('games')
-    .select(`
-      *,
-      game_lineups (
-        *,
-        players (*)
-      ),
-      game_highlights (*)
-    `)
-    .eq('id', gameId)
-    .single()
-
-  if (error) throw error
-  if (!data) throw new Error('Game not found')
-  
-  return data as unknown as GameWithRelations
-}
-
-/**
- * Get current game lineup with player details
- */
-export async function getCurrentGameLineup(
-  gameId: string, 
-  inning: number
-): Promise<LineupWithPlayer[]> {
-  const { data, error } = await supabase
-    .from('game_lineups')
-    .select(`
-      *,
-      players (*)
-    `)
-    .eq('game_id', gameId)
-    .eq('inning', inning)
-    .order('batting_order', { ascending: true })
-
-  if (error) throw error
-  return data as unknown as LineupWithPlayer[]
-}
-
-/**
- * Create a new game
- */
-export async function createGame(game: InsertGame): Promise<Game> {
-  const { data, error } = await supabase
-    .from('games')
-    .insert(game)
-    .select()
-    .single()
-
-  if (error) throw error
-  if (!data) throw new Error('Failed to create game')
-  
-  return data
-}
-
-/**
- * Create a game from a template (copy from existing game)
- */
-export async function createGameFromTemplate(
-    templateGameId: string, 
-    newGameData: Omit<InsertGame, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<Game> {
-    // First get the template game
-    const template = await getGame(templateGameId)
-    
-    // Create new game ensuring all required fields are present
-    const newGame = await createGame({
-      team_id: newGameData.team_id || template.team_id,
-      game_date: newGameData.game_date || template.game_date,
-      opponent: newGameData.opponent ?? template.opponent,
-      location: newGameData.location ?? template.location,
-      game_type: newGameData.game_type ?? template.game_type,
-      notes: newGameData.notes ?? template.notes,
-      status: 'pending' // Always start as pending
-    })
-  
-    // Copy lineup if it exists
-    if (template.game_lineups?.length > 0) {
-      const lineups = template.game_lineups.map(lineup => ({
-        game_id: newGame.id,
-        player_id: lineup.player_id,
-        batting_order: lineup.batting_order,
-        position: lineup.position,
-        inning: lineup.inning
-      }))
-  
-      await supabase.from('game_lineups').insert(lineups)
-    }
-  
-    return newGame
+interface CoachTeamJoin {
+    coach_id: string
+    role: string
+    coach_profiles: CoachProfile
   }
   
-  // Example usage:
-  // const newGame = await createGameFromTemplate('template-id', {
-  //   team_id: 'team-123',
-  //   game_date: '2024-03-15T18:00:00Z',
-  //   opponent: 'New Team'
-  // })
+interface TeamCoach {
+    first_name: string | null
+    last_name: string | null
+    display_name: string | null
+    avatar_url: string | null
+    phone: string | null
+    coach_id: string
+    role: string
+  }
+  
+interface TeamWithCoaches extends Team {
+    coaches: TeamCoach[]
+  }
 
 /**
- * Update an existing game
+ * Get a single team by ID
  */
-export async function updateGame(gameId: string, updates: UpdateGame): Promise<Game> {
+export async function getTeam(teamId: string): QueryResult<Team> {
   const { data, error } = await supabase
-    .from('games')
-    .update(updates)
-    .eq('id', gameId)
+    .from('teams')
     .select()
+    .eq('id', teamId)
     .single()
 
   if (error) throw error
-  if (!data) throw new Error('Game not found')
+  if (!data) throw new Error('Team not found')
   
   return data
 }
 
 /**
- * Delete a game and all related data
+ * Get all teams for a coach
  */
-export async function deleteGame(gameId: string): Promise<void> {
+export async function getCoachTeams(coachId: string): QueryArrayResult<Team> {
+  const { data, error } = await supabase
+    .from('coach_teams')
+    .select(`
+      teams (*)
+    `)
+    .eq('coach_id', coachId)
+
+  if (error) throw error
+  if (!data) return []
+  
+  return data.map(item => item.teams as unknown as Team)
+}
+
+/**
+ * Create a new team
+ */
+export async function createTeam(team: InsertTeam): QueryResult<Team> {
+  const { data, error } = await supabase
+    .from('teams')
+    .insert(team)
+    .select()
+    .single()
+
+  if (error) throw error
+  if (!data) throw new Error('Failed to create team')
+  
+  return data
+}
+
+/**
+ * Update an existing team
+ */
+export async function updateTeam(teamId: string, updates: UpdateTeam): QueryResult<Team> {
+  const { data, error } = await supabase
+    .from('teams')
+    .update(updates)
+    .eq('id', teamId)
+    .select()
+    .single()
+
+  if (error) throw error
+  if (!data) throw new Error('Team not found')
+  
+  return data
+}
+
+/**
+ * Delete a team
+ */
+export async function deleteTeam(teamId: string): Promise<void> {
   const { error } = await supabase
-    .from('games')
+    .from('teams')
     .delete()
-    .eq('id', gameId)
+    .eq('id', teamId)
 
   if (error) throw error
 }
 
 /**
- * Get all games for a team
+ * Add a coach to a team
  */
-export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
+export async function addCoachToTeam(
+  teamId: string, 
+  coachId: string, 
+  role: string = 'assistant'
+): Promise<void> {
+  const { error } = await supabase
+    .from('coach_teams')
+    .insert({
+      team_id: teamId,
+      coach_id: coachId,
+      role
+    })
+
+  if (error) throw error
+}
+
+/**
+ * Remove a coach from a team
+ */
+export async function removeCoachFromTeam(
+  teamId: string, 
+  coachId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('coach_teams')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('coach_id', coachId)
+
+  if (error) throw error
+}
+
+interface CoachTeamProfile extends CoachProfile {
+  role: string
+  coach_id: string
+}
+
+/**
+ * Get team with coaches
+ */
+export async function getTeamWithCoaches(teamId: string): QueryResult<TeamWithCoaches> {
     const { data, error } = await supabase
-      .from('games')
-      .select()
-      .eq('team_id', teamId)
-      .order('game_date', { ascending: false })
+      .from('teams')
+      .select(`
+        *,
+        coach_teams (
+          coach_id,
+          role,
+          coach_profiles (*)
+        )
+      `)
+      .eq('id', teamId)
+      .single()
   
     if (error) throw error
-    return data || []
+    if (!data) throw new Error('Team not found')
+  
+    // Transform the nested data structure
+    const coaches = (data.coach_teams as unknown as CoachTeamJoin[]).map(ct => ({
+      coach_id: ct.coach_id,
+      role: ct.role,
+      first_name: ct.coach_profiles.first_name,
+      last_name: ct.coach_profiles.last_name,
+      display_name: ct.coach_profiles.display_name,
+      avatar_url: ct.coach_profiles.avatar_url,
+      phone: ct.coach_profiles.phone
+    }))
+  
+    return {
+      ...data,
+      coaches
+    }
   }
+
+/**
+ * Check if user is a coach for a team
+ */
+export async function isCoachOfTeam(teamId: string, coachId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('coach_teams')
+    .select()
+    .eq('team_id', teamId)
+    .eq('coach_id', coachId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return false // No rows returned
+    throw error
+  }
+
+  return !!data
+}
