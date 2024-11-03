@@ -4,9 +4,45 @@ import type {
   Team, 
   InsertTeam, 
   UpdateTeam,
+  CoachProfile,
   QueryResult,
   QueryArrayResult
 } from '@/lib/types'
+
+// Type for PostgrestError code
+type PostgrestErrorCode = string
+
+// Interface for nested data from coach_teams join
+interface CoachTeamJoin {
+  coach_id: string
+  role: string
+  coach_profiles: CoachProfile
+}
+
+// Interface for transformed coach data
+interface TeamCoach {
+  first_name: string | null
+  last_name: string | null
+  display_name: string | null
+  avatar_url: string | null
+  phone: string | null
+  coach_id: string
+  role: string
+}
+
+// Interface for team with nested coach data
+interface TeamWithCoaches extends Team {
+  coaches: TeamCoach[]
+}
+
+// Type for the raw database response
+interface RawTeamResponse extends Team {
+  coach_teams: {
+    coach_id: string
+    role: string
+    coach_profiles: CoachProfile
+  }[]
+}
 
 /**
  * Get a single team by ID
@@ -124,8 +160,8 @@ export async function removeCoachFromTeam(
 /**
  * Get team with coaches
  */
-export async function getTeamWithCoaches(teamId: string): QueryResult<Team & { coaches: any[] }> {
-  const { data, error } = await supabase
+export async function getTeamWithCoaches(teamId: string): QueryResult<TeamWithCoaches> {
+  const { data: teamData, error } = await supabase
     .from('teams')
     .select(`
       *,
@@ -139,15 +175,23 @@ export async function getTeamWithCoaches(teamId: string): QueryResult<Team & { c
     .single()
 
   if (error) throw error
-  if (!data) throw new Error('Team not found')
+  if (!teamData) throw new Error('Team not found')
+
+  // Transform the nested data structure
+  const rawTeam = teamData as unknown as RawTeamResponse
+  const coaches = rawTeam.coach_teams.map(ct => ({
+    coach_id: ct.coach_id,
+    role: ct.role,
+    first_name: ct.coach_profiles.first_name,
+    last_name: ct.coach_profiles.last_name,
+    display_name: ct.coach_profiles.display_name,
+    avatar_url: ct.coach_profiles.avatar_url,
+    phone: ct.coach_profiles.phone
+  }))
 
   return {
-    ...data,
-    coaches: data.coach_teams.map((ct: any) => ({
-      id: ct.coach_id,
-      role: ct.role,
-      ...ct.coach_profiles
-    }))
+    ...rawTeam,
+    coaches
   }
 }
 

@@ -1,202 +1,169 @@
-// src/lib/supabase/teams.ts
+// src/lib/supabase/games.ts
 import { supabase } from './index'
 import type { 
-  Team, 
-  InsertTeam, 
-  UpdateTeam,
-  CoachProfile,
+  Game, 
+  InsertGame, 
+  UpdateGame, 
+  GameLineup,
+  GameHighlight,
+  Player,
   QueryResult,
   QueryArrayResult
 } from '@/lib/types'
 
-// Interface for nested data from coach_teams join
-interface CoachTeamJoin {
-  coach_id: string
-  role: string
-  coach_profiles: CoachProfile
+// Define specific types for nested queries
+interface LineupWithPlayer extends GameLineup {
+  players: Player
 }
 
-// Interface for transformed coach data
-interface TeamCoach {
-  first_name: string | null
-  last_name: string | null
-  display_name: string | null
-  avatar_url: string | null
-  phone: string | null
-  coach_id: string
-  role: string
-}
-
-// Interface for team with nested coach data
-interface TeamWithCoaches extends Team {
-  coaches: TeamCoach[]
+interface GameWithRelations extends Game {
+  game_lineups: LineupWithPlayer[]
+  game_highlights: GameHighlight[]
 }
 
 /**
- * Get a single team by ID
+ * Get a single game with all related data
  */
-export async function getTeam(teamId: string): QueryResult<Team> {
+export async function getGame(gameId: string): QueryResult<GameWithRelations> {
   const { data, error } = await supabase
-    .from('teams')
-    .select()
-    .eq('id', teamId)
-    .single()
-
-  if (error) throw error
-  if (!data) throw new Error('Team not found')
-  
-  return data
-}
-
-/**
- * Get all teams for a coach
- */
-export async function getCoachTeams(coachId: string): QueryArrayResult<Team> {
-  const { data, error } = await supabase
-    .from('coach_teams')
-    .select(`
-      teams (*)
-    `)
-    .eq('coach_id', coachId)
-
-  if (error) throw error
-  if (!data) return []
-  
-  return data.map(item => item.teams as unknown as Team)
-}
-
-/**
- * Create a new team
- */
-export async function createTeam(team: InsertTeam): QueryResult<Team> {
-  const { data, error } = await supabase
-    .from('teams')
-    .insert(team)
-    .select()
-    .single()
-
-  if (error) throw error
-  if (!data) throw new Error('Failed to create team')
-  
-  return data
-}
-
-/**
- * Update an existing team
- */
-export async function updateTeam(teamId: string, updates: UpdateTeam): QueryResult<Team> {
-  const { data, error } = await supabase
-    .from('teams')
-    .update(updates)
-    .eq('id', teamId)
-    .select()
-    .single()
-
-  if (error) throw error
-  if (!data) throw new Error('Team not found')
-  
-  return data
-}
-
-/**
- * Delete a team
- */
-export async function deleteTeam(teamId: string): Promise<void> {
-  const { error } = await supabase
-    .from('teams')
-    .delete()
-    .eq('id', teamId)
-
-  if (error) throw error
-}
-
-/**
- * Add a coach to a team
- */
-export async function addCoachToTeam(
-  teamId: string, 
-  coachId: string, 
-  role: string = 'assistant'
-): Promise<void> {
-  const { error } = await supabase
-    .from('coach_teams')
-    .insert({
-      team_id: teamId,
-      coach_id: coachId,
-      role
-    })
-
-  if (error) throw error
-}
-
-/**
- * Remove a coach from a team
- */
-export async function removeCoachFromTeam(
-  teamId: string, 
-  coachId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from('coach_teams')
-    .delete()
-    .eq('team_id', teamId)
-    .eq('coach_id', coachId)
-
-  if (error) throw error
-}
-
-/**
- * Get team with coaches
- */
-export async function getTeamWithCoaches(teamId: string): QueryResult<TeamWithCoaches> {
-  const { data: teamData, error } = await supabase
-    .from('teams')
+    .from('games')
     .select(`
       *,
-      coach_teams (
-        coach_id,
-        role,
-        coach_profiles (*)
-      )
+      game_lineups (
+        *,
+        players (*)
+      ),
+      game_highlights (*)
     `)
-    .eq('id', teamId)
+    .eq('id', gameId)
     .single()
 
   if (error) throw error
-  if (!teamData) throw new Error('Team not found')
-
-  // Transform the nested data structure
-  const coaches = (teamData.coach_teams as unknown as CoachTeamJoin[]).map(ct => ({
-    coach_id: ct.coach_id,
-    role: ct.role,
-    first_name: ct.coach_profiles.first_name,
-    last_name: ct.coach_profiles.last_name,
-    display_name: ct.coach_profiles.display_name,
-    avatar_url: ct.coach_profiles.avatar_url,
-    phone: ct.coach_profiles.phone
-  }))
-
-  return {
-    ...teamData,
-    coaches
-  }
+  if (!data) throw new Error('Game not found')
+  
+  return data as unknown as GameWithRelations
 }
 
 /**
- * Check if user is a coach for a team
+ * Get current game lineup with player details
  */
-export async function isCoachOfTeam(teamId: string, coachId: string): Promise<boolean> {
+export async function getCurrentGameLineup(
+  gameId: string, 
+  inning: number
+): Promise<LineupWithPlayer[]> {
   const { data, error } = await supabase
-    .from('coach_teams')
+    .from('game_lineups')
+    .select(`
+      *,
+      players (*)
+    `)
+    .eq('game_id', gameId)
+    .eq('inning', inning)
+    .order('batting_order', { ascending: true })
+
+  if (error) throw error
+  return data as unknown as LineupWithPlayer[]
+}
+
+/**
+ * Create a new game
+ */
+export async function createGame(game: InsertGame): Promise<Game> {
+  const { data, error } = await supabase
+    .from('games')
+    .insert(game)
     .select()
-    .eq('team_id', teamId)
-    .eq('coach_id', coachId)
     .single()
 
-  if (error) {
-    if (error.code === 'PGRST116') return false // No rows returned
-    throw error
-  }
-
-  return !!data
+  if (error) throw error
+  if (!data) throw new Error('Failed to create game')
+  
+  return data
 }
+
+/**
+ * Create a game from a template (copy from existing game)
+ */
+export async function createGameFromTemplate(
+    templateGameId: string, 
+    newGameData: Omit<InsertGame, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<Game> {
+    // First get the template game
+    const template = await getGame(templateGameId)
+    
+    // Create new game ensuring all required fields are present
+    const newGame = await createGame({
+      team_id: newGameData.team_id || template.team_id,
+      game_date: newGameData.game_date || template.game_date,
+      opponent: newGameData.opponent ?? template.opponent,
+      location: newGameData.location ?? template.location,
+      game_type: newGameData.game_type ?? template.game_type,
+      notes: newGameData.notes ?? template.notes,
+      status: 'pending' // Always start as pending
+    })
+  
+    // Copy lineup if it exists
+    if (template.game_lineups?.length > 0) {
+      const lineups = template.game_lineups.map(lineup => ({
+        game_id: newGame.id,
+        player_id: lineup.player_id,
+        batting_order: lineup.batting_order,
+        position: lineup.position,
+        inning: lineup.inning
+      }))
+  
+      await supabase.from('game_lineups').insert(lineups)
+    }
+  
+    return newGame
+  }
+  
+  // Example usage:
+  // const newGame = await createGameFromTemplate('template-id', {
+  //   team_id: 'team-123',
+  //   game_date: '2024-03-15T18:00:00Z',
+  //   opponent: 'New Team'
+  // })
+
+/**
+ * Update an existing game
+ */
+export async function updateGame(gameId: string, updates: UpdateGame): Promise<Game> {
+  const { data, error } = await supabase
+    .from('games')
+    .update(updates)
+    .eq('id', gameId)
+    .select()
+    .single()
+
+  if (error) throw error
+  if (!data) throw new Error('Game not found')
+  
+  return data
+}
+
+/**
+ * Delete a game and all related data
+ */
+export async function deleteGame(gameId: string): Promise<void> {
+  const { error } = await supabase
+    .from('games')
+    .delete()
+    .eq('id', gameId)
+
+  if (error) throw error
+}
+
+/**
+ * Get all games for a team
+ */
+export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
+    const { data, error } = await supabase
+      .from('games')
+      .select()
+      .eq('team_id', teamId)
+      .order('game_date', { ascending: false })
+  
+    if (error) throw error
+    return data || []
+  }
