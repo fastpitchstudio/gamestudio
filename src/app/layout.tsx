@@ -33,8 +33,12 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <Providers>
           {children}
-          <DebugAuth />
-          <DebugSupabase />
+          {process.env.NODE_ENV === 'development' && (
+            <>
+              <DebugAuth />
+              <DebugSupabase />
+            </>
+          )}
         </Providers>
       </body>
     </html>

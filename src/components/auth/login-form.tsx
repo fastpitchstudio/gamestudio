@@ -31,20 +31,25 @@ export function LoginForm() {
     try {
       const supabase = createClient()
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
   
-      if (error) throw error
+      if (signInError) {
+        console.error('Sign in error:', signInError)
+        throw new Error(signInError.message)
+      }
   
-      if (data.session) {
-        // Force page refresh
+      if (data?.session) {
+        // Force page refresh to update auth state
         window.location.href = '/dashboard'
+      } else {
+        throw new Error('No session created after successful sign in')
       }
     } catch (error) {
       console.error('Login error:', error)
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : 'An error occurred during sign in')
     } finally {
       setLoading(false)
     }
@@ -52,7 +57,7 @@ export function LoginForm() {
 
   // Add mounted check before render
   if (!mounted) {
-    return null // or a loading spinner
+    return null
   }
 
   return (

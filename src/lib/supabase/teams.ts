@@ -68,19 +68,41 @@ export async function getCoachTeams(coachId: string): QueryArrayResult<Team> {
 }
 
 /**
- * Create a new team
+ * Create a new team and add the creating coach as head coach
  */
 export async function createTeam(team: InsertTeam): QueryResult<Team> {
-  const { data, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  // Start a Supabase transaction
+  const { data: newTeam, error: teamError } = await supabase
     .from('teams')
     .insert(team)
     .select()
     .single()
 
-  if (error) throw error
-  if (!data) throw new Error('Failed to create team')
+  if (teamError) throw teamError
+  if (!newTeam) throw new Error('Failed to create team')
+
+  // Add the creating coach as head coach
+  const { error: coachError } = await supabase
+    .from('coach_teams')
+    .insert({
+      team_id: newTeam.id,
+      coach_id: user.id,
+      role: 'head'
+    })
+
+  if (coachError) {
+    // If adding coach fails, attempt to delete the team
+    await supabase.from('teams').delete().eq('id', newTeam.id)
+    throw coachError
+  }
   
-  return data
+  return newTeam
 }
 
 /**
