@@ -5,9 +5,7 @@ import { Database } from './database-types'
 
 // Export types from supabase-js for convenience
 export type SupabaseClient = ReturnType<typeof createClient<Database>>
-export type DbResult<T> = T extends PromiseLike<infer U> ? U : never
-export type DbResultOk<T> = T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never
-export type DbResultErr = PostgrestError
+export type DbError = PostgrestError
 
 // Convenient type extractions
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
@@ -22,7 +20,6 @@ export type Game = Tables<'games'>
 export type GameLineup = Tables<'game_lineups'>
 export type GameHighlight = Tables<'game_highlights'>
 export type CoachProfile = Tables<'coach_profiles'>
-export type CoachTeam = Tables<'coach_teams'>
 export type CoachSettings = Tables<'coach_settings'>
 export type CoachInvitation = Tables<'coach_invitations'>
 
@@ -33,7 +30,6 @@ export type InsertGame = InsertTables<'games'>
 export type InsertGameLineup = InsertTables<'game_lineups'>
 export type InsertGameHighlight = InsertTables<'game_highlights'>
 export type InsertCoachProfile = InsertTables<'coach_profiles'>
-export type InsertCoachTeam = InsertTables<'coach_teams'>
 export type InsertCoachSettings = InsertTables<'coach_settings'>
 export type InsertCoachInvitation = InsertTables<'coach_invitations'>
 
@@ -44,11 +40,10 @@ export type UpdateGame = UpdateTables<'games'>
 export type UpdateGameLineup = UpdateTables<'game_lineups'>
 export type UpdateGameHighlight = UpdateTables<'game_highlights'>
 export type UpdateCoachProfile = UpdateTables<'coach_profiles'>
-export type UpdateCoachTeam = UpdateTables<'coach_teams'>
 export type UpdateCoachSettings = UpdateTables<'coach_settings'>
 export type UpdateCoachInvitation = UpdateTables<'coach_invitations'>
 
-// Add some utility types for common patterns
+// Add utility types for common patterns
 export type WithTimestamps = {
   created_at: string
   updated_at: string
@@ -58,15 +53,17 @@ export type WithCreatedAt = {
   created_at: string
 }
 
-// Add utility types for common response patterns
-export type WithPlayers<T> = T & {
+// Relationship types (only export the ones we actually use)
+export interface WithPlayers<T> {
   players: Player
 }
 
-export type WithTeam<T> = T & {
-  teams: Team
-}
+// You can uncomment these if you need them in other files
+// export interface WithTeam<T> {
+//   teams: Team
+// }
 
-export type WithPosition<T> = T & {
-  positions: Position
-}
+// Function return types
+export type QueryResult<T> = Promise<T>
+export type QueryArrayResult<T> = Promise<T[]>
+export type MutationResult<T> = Promise<T>

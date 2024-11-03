@@ -6,23 +6,26 @@ import type {
   UpdateGame, 
   GameLineup,
   GameHighlight,
-  Player
+  Player,
+  QueryResult,
+  QueryArrayResult,
+  WithPlayers
 } from '@/lib/types'
 
-// Define specific types for the Supabase response structure
-interface GameLineupWithPlayer extends GameLineup {
+// Define specific types for nested queries
+interface LineupWithPlayer extends GameLineup {
   players: Player
 }
 
 interface GameWithRelations extends Game {
-  game_lineups: GameLineupWithPlayer[]
+  game_lineups: LineupWithPlayer[]
   game_highlights: GameHighlight[]
 }
 
 /**
  * Get a single game with all related data
  */
-export async function getGame(gameId: string): Promise<GameWithRelations> {
+export async function getGame(gameId: string): QueryResult<GameWithRelations> {
   const { data, error } = await supabase
     .from('games')
     .select(`
@@ -48,7 +51,7 @@ export async function getGame(gameId: string): Promise<GameWithRelations> {
 export async function getCurrentGameLineup(
   gameId: string, 
   inning: number
-): Promise<GameLineupWithPlayer[]> {
+): Promise<LineupWithPlayer[]> {
   const { data, error } = await supabase
     .from('game_lineups')
     .select(`
@@ -60,7 +63,7 @@ export async function getCurrentGameLineup(
     .order('batting_order', { ascending: true })
 
   if (error) throw error
-  return data as unknown as GameLineupWithPlayer[]
+  return data as unknown as LineupWithPlayer[]
 }
 
 /**
@@ -155,13 +158,13 @@ export async function deleteGame(gameId: string): Promise<void> {
 /**
  * Get all games for a team
  */
-export async function getTeamGames(teamId: string): Promise<Game[]> {
-  const { data, error } = await supabase
-    .from('games')
-    .select()
-    .eq('team_id', teamId)
-    .order('game_date', { ascending: false })
-
-  if (error) throw error
-  return data || []
-}
+export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
+    const { data, error } = await supabase
+      .from('games')
+      .select()
+      .eq('team_id', teamId)
+      .order('game_date', { ascending: false })
+  
+    if (error) throw error
+    return data || []
+  }
