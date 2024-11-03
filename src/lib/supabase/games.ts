@@ -9,25 +9,28 @@ import type {
   QueryArrayResult
 } from '@/lib/types'
 
+// Interface for nested data from coach_teams join
 interface CoachTeamJoin {
-    coach_id: string
-    role: string
-    coach_profiles: CoachProfile
-  }
-  
+  coach_id: string
+  role: string
+  coach_profiles: CoachProfile
+}
+
+// Interface for transformed coach data
 interface TeamCoach {
-    first_name: string | null
-    last_name: string | null
-    display_name: string | null
-    avatar_url: string | null
-    phone: string | null
-    coach_id: string
-    role: string
-  }
-  
+  first_name: string | null
+  last_name: string | null
+  display_name: string | null
+  avatar_url: string | null
+  phone: string | null
+  coach_id: string
+  role: string
+}
+
+// Interface for team with nested coach data
 interface TeamWithCoaches extends Team {
-    coaches: TeamCoach[]
-  }
+  coaches: TeamCoach[]
+}
 
 /**
  * Get a single team by ID
@@ -142,47 +145,42 @@ export async function removeCoachFromTeam(
   if (error) throw error
 }
 
-interface CoachTeamProfile extends CoachProfile {
-  role: string
-  coach_id: string
-}
-
 /**
  * Get team with coaches
  */
 export async function getTeamWithCoaches(teamId: string): QueryResult<TeamWithCoaches> {
-    const { data, error } = await supabase
-      .from('teams')
-      .select(`
-        *,
-        coach_teams (
-          coach_id,
-          role,
-          coach_profiles (*)
-        )
-      `)
-      .eq('id', teamId)
-      .single()
-  
-    if (error) throw error
-    if (!data) throw new Error('Team not found')
-  
-    // Transform the nested data structure
-    const coaches = (data.coach_teams as unknown as CoachTeamJoin[]).map(ct => ({
-      coach_id: ct.coach_id,
-      role: ct.role,
-      first_name: ct.coach_profiles.first_name,
-      last_name: ct.coach_profiles.last_name,
-      display_name: ct.coach_profiles.display_name,
-      avatar_url: ct.coach_profiles.avatar_url,
-      phone: ct.coach_profiles.phone
-    }))
-  
-    return {
-      ...data,
-      coaches
-    }
+  const { data: teamData, error } = await supabase
+    .from('teams')
+    .select(`
+      *,
+      coach_teams (
+        coach_id,
+        role,
+        coach_profiles (*)
+      )
+    `)
+    .eq('id', teamId)
+    .single()
+
+  if (error) throw error
+  if (!teamData) throw new Error('Team not found')
+
+  // Transform the nested data structure
+  const coaches = (teamData.coach_teams as unknown as CoachTeamJoin[]).map(ct => ({
+    coach_id: ct.coach_id,
+    role: ct.role,
+    first_name: ct.coach_profiles.first_name,
+    last_name: ct.coach_profiles.last_name,
+    display_name: ct.coach_profiles.display_name,
+    avatar_url: ct.coach_profiles.avatar_url,
+    phone: ct.coach_profiles.phone
+  }))
+
+  return {
+    ...teamData,
+    coaches
   }
+}
 
 /**
  * Check if user is a coach for a team
