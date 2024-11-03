@@ -9,16 +9,6 @@ import type {
   QueryArrayResult
 } from '@/lib/types'
 
-// Type for PostgrestError code
-type PostgrestErrorCode = string
-
-// Interface for nested data from coach_teams join
-interface CoachTeamJoin {
-  coach_id: string
-  role: string
-  coach_profiles: CoachProfile
-}
-
 // Interface for transformed coach data
 interface TeamCoach {
   first_name: string | null
