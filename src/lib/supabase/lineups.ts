@@ -3,11 +3,13 @@ import { supabase } from './index'
 import type { 
   GameLineup, 
   InsertGameLineup, 
-  UpdateGameLineup, 
-  Player 
+  UpdateGameLineup,
+  Player,
+  QueryResult,
+  QueryArrayResult
 } from '@/lib/types'
 
-// Define specific types for nested queries
+// Interface for lineup with player data
 interface LineupWithPlayer extends GameLineup {
   players: Player
 }
@@ -15,7 +17,7 @@ interface LineupWithPlayer extends GameLineup {
 /**
  * Get full lineup for a game with player details
  */
-export async function getGameLineup(gameId: string): Promise<LineupWithPlayer[]> {
+export async function getGameLineup(gameId: string): QueryArrayResult<LineupWithPlayer> {
   const { data, error } = await supabase
     .from('game_lineups')
     .select(`
@@ -36,7 +38,7 @@ export async function getGameLineup(gameId: string): Promise<LineupWithPlayer[]>
 export async function getInningLineup(
   gameId: string, 
   inning: number
-): Promise<LineupWithPlayer[]> {
+): QueryArrayResult<LineupWithPlayer> {
   const { data, error } = await supabase
     .from('game_lineups')
     .select(`
@@ -54,7 +56,7 @@ export async function getInningLineup(
 /**
  * Update or create multiple lineup entries
  */
-export async function updateLineup(lineup: InsertGameLineup[]): Promise<GameLineup[]> {
+export async function updateLineup(lineup: InsertGameLineup[]): QueryArrayResult<GameLineup> {
   const { data, error } = await supabase
     .from('game_lineups')
     .upsert(lineup, {
@@ -76,7 +78,7 @@ export async function updateLineupPosition(
   playerId: string,
   inning: number,
   updates: UpdateGameLineup
-): Promise<GameLineup> {
+): QueryResult<GameLineup> {
   const { data, error } = await supabase
     .from('game_lineups')
     .update(updates)
@@ -93,7 +95,7 @@ export async function updateLineupPosition(
 }
 
 /**
- * Delete a player from the lineup for a specific inning
+ * Remove a player from the lineup for a specific inning
  */
 export async function removeFromLineup(
   gameId: string,
@@ -117,11 +119,9 @@ export async function copyInningLineup(
   gameId: string,
   fromInning: number,
   toInning: number
-): Promise<GameLineup[]> {
-  // Get source inning lineup
+): QueryArrayResult<GameLineup> {
   const sourceLineup = await getInningLineup(gameId, fromInning)
   
-  // Create new lineup entries for target inning
   const newLineup: InsertGameLineup[] = sourceLineup.map(entry => ({
     game_id: gameId,
     player_id: entry.player_id,
@@ -141,80 +141,66 @@ export async function copyInningLineup(
   return data
 }
 
-export function validateLineup(lineup: GameLineup[]): { valid: boolean; errors: string[] } {
-    const errors: string[] = []
-    const positions = new Map<string, number>() // Maps position to count of active players
-    const battingOrders = new Set<number>()
-  
-    lineup.forEach(entry => {
-      // Check for duplicate positions (excluding SUB and null positions)
-      if (entry.position && entry.position !== 'SUB') {
-        const count = positions.get(entry.position) || 0
-        positions.set(entry.position, count + 1)
-        
-        if (count > 0) {
-          errors.push(`Multiple active players in position: ${entry.position}`)
-        }
-      }
-  
-      // Check for duplicate batting order (excluding null orders)
-      if (entry.batting_order !== null) {
-        if (battingOrders.has(entry.batting_order)) {
-          errors.push(`Duplicate batting order: ${entry.batting_order}`)
-        }
-        battingOrders.add(entry.batting_order)
-      }
-    })
-  
-    // Check maximum number of active players (9 or 10 depending on rules)
-    const activePositions = Array.from(positions.values()).reduce((sum, count) => sum + count, 0)
-    if (activePositions > 10) { // Adjust number based on league rules
-      errors.push('Too many active players in lineup')
-    }
-  
-    return {
-      valid: errors.length === 0,
-      errors
-    }
+interface ValidationResult {
+  valid: boolean
+  errors: string[]
 }
 
-// Helper to get a formatted display name for a position
-export function getPositionDisplay(position: string | null): string {
-    if (!position) return 'Not Set'
-    
-    const positionMap: Record<string, string> = {
-      'P': 'Pitcher',
-      'C': 'Catcher',
-      '1B': 'First Base',
-      '2B': 'Second Base',
-      '3B': 'Third Base',
-      'SS': 'Shortstop',
-      'LF': 'Left Field',
-      'CF': 'Center Field',
-      'RF': 'Right Field',
-      'DP': 'Designated Player',
-      'FLEX': 'Flex',
-      'TWIN': 'Twin Player',
-      'EP': 'Extra Player',
-      'EH': 'Extra Hitter',
-      'SUB': 'Substitute'
+/**
+ * Validate lineup for errors
+ */
+export function validateLineup(lineup: GameLineup[]): ValidationResult {
+  const errors: string[] = []
+  const positions = new Set<string>()
+  const battingOrders = new Set<number>()
+
+  lineup.forEach(entry => {
+    // Check for duplicate positions (excluding SUB and null positions)
+    if (entry.position && entry.position !== 'SUB') {
+      if (positions.has(entry.position)) {
+        errors.push(`Multiple active players in position: ${entry.position}`)
+      }
+      positions.add(entry.position)
     }
-  
-    return positionMap[position] || position
-  }
-  
-  // Helper to check if position is a substitute
-  export function isSubstitute(position: string | null): boolean {
-    return position === 'SUB'
-  }
-  
-  // Helper to get valid positions for substitutions
-  export function getValidSubstitutionPositions(originalPosition: string | null): string[] {
-    if (!originalPosition || originalPosition === 'SUB') {
-      return ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DP', 'FLEX', 'SUB']
+
+    // Check for duplicate batting order
+    if (entry.batting_order !== null) {
+      if (battingOrders.has(entry.batting_order)) {
+        errors.push(`Duplicate batting order: ${entry.batting_order}`)
+      }
+      battingOrders.add(entry.batting_order)
     }
-    
-    // If player is in a specific position, they can only be substituted
-    // or return to their original position
-    return ['SUB', originalPosition]
+  })
+
+  return {
+    valid: errors.length === 0,
+    errors
   }
+}
+
+/**
+ * Get valid positions for a player
+ */
+export function getAvailablePositions(
+  currentLineup: GameLineup[],
+  playerId: string,
+  inning: number
+): string[] {
+  const takenPositions = new Set(
+    currentLineup
+      .filter(entry => 
+        entry.player_id !== playerId && 
+        entry.inning === inning && 
+        entry.position !== 'SUB' &&
+        entry.position !== null
+      )
+      .map(entry => entry.position)
+  )
+
+  const allPositions = [
+    'P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF',
+    'DP', 'FLEX', 'TWIN', 'EP', 'EH', 'SUB'
+  ]
+
+  return allPositions.filter(pos => !takenPositions.has(pos))
+}

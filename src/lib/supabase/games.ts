@@ -3,7 +3,7 @@ import { supabase } from './index'
 import type { 
   Game, 
   InsertGame, 
-  UpdateGame, 
+  UpdateGame,
   GameLineup,
   GameHighlight,
   Player,
@@ -11,13 +11,22 @@ import type {
   QueryArrayResult
 } from '@/lib/types'
 
-// Define specific types for nested queries
+// Interface for game with all relations
+interface GameWithRelations extends Game {
+  game_lineups: LineupWithPlayer[]
+  game_highlights: GameHighlight[]
+}
+
+// Interface for lineup with player data
 interface LineupWithPlayer extends GameLineup {
   players: Player
 }
 
-interface GameWithRelations extends Game {
-  game_lineups: LineupWithPlayer[]
+// Raw database response type
+interface RawGameResponse extends Game {
+  game_lineups: {
+    players: Player
+  }[]
   game_highlights: GameHighlight[]
 }
 
@@ -45,30 +54,23 @@ export async function getGame(gameId: string): QueryResult<GameWithRelations> {
 }
 
 /**
- * Get current game lineup with player details
+ * Get all games for a team
  */
-export async function getCurrentGameLineup(
-  gameId: string, 
-  inning: number
-): Promise<LineupWithPlayer[]> {
+export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
   const { data, error } = await supabase
-    .from('game_lineups')
-    .select(`
-      *,
-      players (*)
-    `)
-    .eq('game_id', gameId)
-    .eq('inning', inning)
-    .order('batting_order', { ascending: true })
+    .from('games')
+    .select()
+    .eq('team_id', teamId)
+    .order('game_date', { ascending: false })
 
   if (error) throw error
-  return data as unknown as LineupWithPlayer[]
+  return data || []
 }
 
 /**
  * Create a new game
  */
-export async function createGame(game: InsertGame): Promise<Game> {
+export async function createGame(game: InsertGame): QueryResult<Game> {
   const { data, error } = await supabase
     .from('games')
     .insert(game)
@@ -82,53 +84,45 @@ export async function createGame(game: InsertGame): Promise<Game> {
 }
 
 /**
- * Create a game from a template (copy from existing game)
+ * Create a game from a template
  */
 export async function createGameFromTemplate(
-    templateGameId: string, 
-    newGameData: Omit<InsertGame, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<Game> {
-    // First get the template game
-    const template = await getGame(templateGameId)
-    
-    // Create new game ensuring all required fields are present
-    const newGame = await createGame({
-      team_id: newGameData.team_id || template.team_id,
-      game_date: newGameData.game_date || template.game_date,
-      opponent: newGameData.opponent ?? template.opponent,
-      location: newGameData.location ?? template.location,
-      game_type: newGameData.game_type ?? template.game_type,
-      notes: newGameData.notes ?? template.notes,
-      status: 'pending' // Always start as pending
-    })
+  templateGameId: string, 
+  newGameData: Omit<InsertGame, 'id' | 'created_at' | 'updated_at'>
+): QueryResult<Game> {
+  const template = await getGame(templateGameId)
   
-    // Copy lineup if it exists
-    if (template.game_lineups?.length > 0) {
-      const lineups = template.game_lineups.map(lineup => ({
-        game_id: newGame.id,
-        player_id: lineup.player_id,
-        batting_order: lineup.batting_order,
-        position: lineup.position,
-        inning: lineup.inning
-      }))
-  
-      await supabase.from('game_lineups').insert(lineups)
-    }
-  
-    return newGame
+  // Create new game
+  const newGame = await createGame({
+    team_id: newGameData.team_id || template.team_id,
+    game_date: newGameData.game_date || template.game_date,
+    opponent: newGameData.opponent ?? template.opponent,
+    location: newGameData.location ?? template.location,
+    game_type: newGameData.game_type ?? template.game_type,
+    notes: newGameData.notes ?? template.notes,
+    status: 'pending' // Always start as pending
+  })
+
+  // Copy lineup if it exists
+  if (template.game_lineups?.length > 0) {
+    const lineups = template.game_lineups.map(lineup => ({
+      game_id: newGame.id,
+      player_id: lineup.player_id,
+      batting_order: lineup.batting_order,
+      position: lineup.position,
+      inning: lineup.inning
+    }))
+
+    await supabase.from('game_lineups').insert(lineups)
   }
-  
-  // Example usage:
-  // const newGame = await createGameFromTemplate('template-id', {
-  //   team_id: 'team-123',
-  //   game_date: '2024-03-15T18:00:00Z',
-  //   opponent: 'New Team'
-  // })
+
+  return newGame
+}
 
 /**
  * Update an existing game
  */
-export async function updateGame(gameId: string, updates: UpdateGame): Promise<Game> {
+export async function updateGame(gameId: string, updates: UpdateGame): QueryResult<Game> {
   const { data, error } = await supabase
     .from('games')
     .update(updates)
@@ -143,7 +137,7 @@ export async function updateGame(gameId: string, updates: UpdateGame): Promise<G
 }
 
 /**
- * Delete a game and all related data
+ * Delete a game
  */
 export async function deleteGame(gameId: string): Promise<void> {
   const { error } = await supabase
@@ -153,17 +147,3 @@ export async function deleteGame(gameId: string): Promise<void> {
 
   if (error) throw error
 }
-
-/**
- * Get all games for a team
- */
-export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
-    const { data, error } = await supabase
-      .from('games')
-      .select()
-      .eq('team_id', teamId)
-      .order('game_date', { ascending: false })
-  
-    if (error) throw error
-    return data || []
-  }
