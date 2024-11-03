@@ -1,70 +1,72 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+// src/lib/types/supabase.ts
+import { createClient } from '@supabase/supabase-js'
+import { PostgrestError } from '@supabase/supabase-js'
+import { Database } from './database-types'
 
-export interface Database {
-  public: {
-    Tables: {
-      organizations: {
-        Row: {
-          id: string
-          name: string
-          owner_id: string
-          sport_type: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          owner_id: string
-          sport_type: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          owner_id?: string
-          sport_type?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      teams: {
-        Row: {
-          id: string
-          organization_id: string
-          name: string
-          division: string | null
-          season: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          name: string
-          division?: string | null
-          season?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          name?: string
-          division?: string | null
-          season?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      // Add other table types as needed
-    }
-  }
+// Export types from supabase-js for convenience
+export type SupabaseClient = ReturnType<typeof createClient<Database>>
+export type DbResult<T> = T extends PromiseLike<infer U> ? U : never
+export type DbResultOk<T> = T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never
+export type DbResultErr = PostgrestError
+
+// Convenient type extractions
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
+export type InsertTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
+export type UpdateTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
+
+// Common table types
+export type Team = Tables<'teams'>
+export type Player = Tables<'players'>
+export type Position = Tables<'positions'>
+export type Game = Tables<'games'>
+export type GameLineup = Tables<'game_lineups'>
+export type GameHighlight = Tables<'game_highlights'>
+export type CoachProfile = Tables<'coach_profiles'>
+export type CoachTeam = Tables<'coach_teams'>
+export type CoachSettings = Tables<'coach_settings'>
+export type CoachInvitation = Tables<'coach_invitations'>
+
+// Insert types
+export type InsertTeam = InsertTables<'teams'>
+export type InsertPlayer = InsertTables<'players'>
+export type InsertGame = InsertTables<'games'>
+export type InsertGameLineup = InsertTables<'game_lineups'>
+export type InsertGameHighlight = InsertTables<'game_highlights'>
+export type InsertCoachProfile = InsertTables<'coach_profiles'>
+export type InsertCoachTeam = InsertTables<'coach_teams'>
+export type InsertCoachSettings = InsertTables<'coach_settings'>
+export type InsertCoachInvitation = InsertTables<'coach_invitations'>
+
+// Update types
+export type UpdateTeam = UpdateTables<'teams'>
+export type UpdatePlayer = UpdateTables<'players'>
+export type UpdateGame = UpdateTables<'games'>
+export type UpdateGameLineup = UpdateTables<'game_lineups'>
+export type UpdateGameHighlight = UpdateTables<'game_highlights'>
+export type UpdateCoachProfile = UpdateTables<'coach_profiles'>
+export type UpdateCoachTeam = UpdateTables<'coach_teams'>
+export type UpdateCoachSettings = UpdateTables<'coach_settings'>
+export type UpdateCoachInvitation = UpdateTables<'coach_invitations'>
+
+// Add some utility types for common patterns
+export type WithTimestamps = {
+  created_at: string
+  updated_at: string
+}
+
+export type WithCreatedAt = {
+  created_at: string
+}
+
+// Add utility types for common response patterns
+export type WithPlayers<T> = T & {
+  players: Player
+}
+
+export type WithTeam<T> = T & {
+  teams: Team
+}
+
+export type WithPosition<T> = T & {
+  positions: Position
 }
