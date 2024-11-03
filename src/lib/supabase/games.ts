@@ -22,14 +22,6 @@ interface LineupWithPlayer extends GameLineup {
   players: Player
 }
 
-// Raw database response type
-interface RawGameResponse extends Game {
-  game_lineups: {
-    players: Player
-  }[]
-  game_highlights: GameHighlight[]
-}
-
 /**
  * Get a single game with all related data
  */
