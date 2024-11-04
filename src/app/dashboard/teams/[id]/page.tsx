@@ -4,7 +4,14 @@ import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-// @ts-expect-error - Next.js PageProps type issue
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+interface PageProps {
+  params: {
+    [key: string]: string | string[]
+  }
+  searchParams?: { [key: string]: string | string[] | undefined }
+}
+
 interface TeamPageProps {
   params: {
     id: string
