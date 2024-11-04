@@ -12,7 +12,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Database } from '@/lib/types/database-types'
 
-export default async function TeamPage({ params }: { params: { id: string } }) {
+type Props = {
+    params: { id: string }
+    searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function TeamPage({ params }: Props) {
   const supabase = createServerComponentClient<Database>({ cookies })
   
   const { data: { user }, error: userError } = await supabase.auth.getUser()
