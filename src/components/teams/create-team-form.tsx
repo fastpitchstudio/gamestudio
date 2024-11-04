@@ -1,20 +1,117 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createTeam } from '@/lib/supabase/teams'
+import { createTeam } from '@/lib/supabase/teams-client'
+import { uploadTeamLogo } from '@/lib/supabase/storage'
+import { debugPolicies } from '@/lib/supabase/debug'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle, Upload, X, Bug } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import Image from 'next/image'
 import type { Database } from '@/lib/types/database-types'
+
+interface FormState {
+  name: string
+  division: string
+  season: string
+  team_color: string
+  logo_file?: File | null
+  logo_preview?: string
+}
+
+const STORAGE_KEY = 'create_team_form_state'
 
 export function CreateTeamForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [isDebugging, setIsDebugging] = useState(false)
   const [error, setError] = useState('')
+  const [debugResults, setDebugResults] = useState<any>(null)
   const supabase = createClientComponentClient<Database>()
+  
+  // Form state with persistence
+  const [formState, setFormState] = useState<FormState>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : {
+        name: '',
+        division: '',
+        season: '',
+        team_color: '#1e40af',
+        logo_file: null,
+        logo_preview: ''
+      }
+    }
+    return {
+      name: '',
+      division: '',
+      season: '',
+      team_color: '#1e40af',
+      logo_file: null,
+      logo_preview: ''
+    }
+  })
+
+  // Persist form state
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formState))
+  }, [formState])
+
+  // Clear form state on successful submission
+  const clearFormState = () => {
+    localStorage.removeItem(STORAGE_KEY)
+    setFormState({
+      name: '',
+      division: '',
+      season: '',
+      team_color: '#1e40af',
+      logo_file: null,
+      logo_preview: ''
+    })
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setFormState(prev => ({
+        ...prev,
+        logo_file: file,
+        logo_preview: previewUrl
+      }))
+    }
+  }
+
+  const removeLogo = () => {
+    setFormState(prev => ({
+      ...prev,
+      logo_file: null,
+      logo_preview: ''
+    }))
+  }
+
+  const handleDebug = async () => {
+    setIsDebugging(true)
+    setDebugResults(null)
+    setError('')
+
+    try {
+      const results = await debugPolicies()
+      console.log('Debug results:', results)
+      setDebugResults(results)
+    } catch (err) {
+      console.error('Debug error:', err)
+      setError(err instanceof Error ? err.message : 'Debug failed')
+    } finally {
+      setIsDebugging(false)
+    }
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -22,26 +119,40 @@ export function CreateTeamForm() {
     setError('')
 
     try {
+      // Verify authentication first
       const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
       if (userError || !user) {
         throw new Error('You must be logged in to create a team')
       }
 
-      const formData = new FormData(event.currentTarget)
-      const teamData = {
-        name: formData.get('name') as string,
-        division: formData.get('division') as string || null,
-        season: formData.get('season') as string || null,
-        team_color: formData.get('team_color') as string || null,
-        logo_url: formData.get('logo_url') as string || null,
+      // Upload logo if present
+      let logoUrl = null
+      if (formState.logo_file) {
+        logoUrl = await uploadTeamLogo(formState.logo_file)
       }
 
+      const teamData = {
+        name: formState.name,
+        division: formState.division || null,
+        season: formState.season || null,
+        team_color: formState.team_color || null,
+        logo_url: logoUrl
+      }
+
+      // Validate required fields
+      if (!teamData.name?.trim()) {
+        throw new Error('Team name is required')
+      }
+
+      console.log('Creating team with data:', teamData)
       const team = await createTeam(teamData)
+      console.log('Team created:', team)
+
+      clearFormState()
       router.push(`/dashboard/teams/${team.id}`)
       router.refresh()
     } catch (error) {
-      console.error('Error creating team:', error)
+      console.error('Detailed form error:', error)
       setError(error instanceof Error ? error.message : 'Failed to create team. Please try again.')
     } finally {
       setIsLoading(false)
@@ -59,7 +170,8 @@ export function CreateTeamForm() {
             <Label htmlFor="name">Team Name *</Label>
             <Input
               id="name"
-              name="name"
+              value={formState.name}
+              onChange={(e) => setFormState(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter team name"
               required
             />
@@ -69,7 +181,8 @@ export function CreateTeamForm() {
             <Label htmlFor="division">Division</Label>
             <Input
               id="division"
-              name="division"
+              value={formState.division}
+              onChange={(e) => setFormState(prev => ({ ...prev, division: e.target.value }))}
               placeholder="e.g., 12U, 14U, 16U"
             />
           </div>
@@ -78,42 +191,111 @@ export function CreateTeamForm() {
             <Label htmlFor="season">Season</Label>
             <Input
               id="season"
-              name="season"
+              value={formState.season}
+              onChange={(e) => setFormState(prev => ({ ...prev, season: e.target.value }))}
               placeholder="e.g., Spring 2024"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="team_color">Team Color</Label>
-            <Input
-              id="team_color"
-              name="team_color"
-              type="color"
-              className="h-10 px-2"
-            />
+            <div className="flex items-center gap-4">
+              <Input
+                id="team_color"
+                type="color"
+                value={formState.team_color}
+                onChange={(e) => setFormState(prev => ({ ...prev, team_color: e.target.value }))}
+                className="h-10 w-20"
+              />
+              <div 
+                className="h-10 flex-1 rounded-md border"
+                style={{ backgroundColor: formState.team_color }}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="logo_url">Logo URL</Label>
-            <Input
-              id="logo_url"
-              name="logo_url"
-              type="url"
-              placeholder="https://..."
-            />
+            <Label htmlFor="logo">Team Logo</Label>
+            <div className="flex items-center gap-4">
+              {formState.logo_preview ? (
+                <div className="relative w-20 h-20">
+                  <Image
+                    src={formState.logo_preview}
+                    alt="Logo preview"
+                    fill
+                    className="object-cover rounded-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Input
+                    id="logo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('logo')?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Logo
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {error && (
-            <p className="text-sm text-red-500">{error}</p>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Creating...' : 'Create Team'}
-          </Button>
+          {debugResults && (
+            <Alert variant={debugResults.error ? "destructive" : "default"}>
+              <AlertTitle>Debug Results</AlertTitle>
+              <AlertDescription>
+                <pre className="mt-2 text-xs whitespace-pre-wrap">
+                  {JSON.stringify(debugResults, null, 2)}
+                </pre>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Creating...' : 'Create Team'}
+            </Button>
+
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleDebug}
+                disabled={isDebugging}
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                {isDebugging ? 'Running Debug...' : 'Debug Policies'}
+              </Button>
+            )}
+          </div>
         </form>
       </CardContent>
     </Card>
