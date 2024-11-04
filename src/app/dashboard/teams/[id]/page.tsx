@@ -3,13 +3,14 @@ import { Loader2 } from 'lucide-react'
 import TeamPageContent from './team-page-content'
 import { getInitialTeam } from './actions'
 
-export default async function Page({ 
-  params 
-}: { 
-  params: { id: string } 
-}) {
-  const teamId = params.id
-  const initialTeam = await getInitialTeam(teamId)
+// Minimal page component with no type annotations
+export default function Page(props: any) {
+  return <TeamPage {...props} />
+}
+
+// Helper component with proper typing
+async function TeamPage({ params }: { params: { id: string } }) {
+  const initialTeam = await getInitialTeam(params.id)
 
   return (
     <Suspense 
@@ -20,7 +21,7 @@ export default async function Page({
       }
     >
       <TeamPageContent 
-        teamId={teamId} 
+        teamId={params.id} 
         initialTeam={initialTeam} 
       />
     </Suspense>
