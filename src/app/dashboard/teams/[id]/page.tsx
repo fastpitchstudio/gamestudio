@@ -5,7 +5,12 @@ import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-export default async function TeamPage({ params }: { params: { id: string } }) {
+type Props = {
+  params: { id: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function TeamPage({ params }: Props) {
   console.log('TeamPage - Accessing team:', params.id) // Debug log
   
   const supabase = createServerComponentClient<Database>({ cookies })
