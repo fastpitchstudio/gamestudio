@@ -2,31 +2,78 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
-// Add type for jsPDF with autoTable plugin
-interface JsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: unknown) => void;
-}
-
-interface LineupPlayer {
-  order: number;
-  number: string;
-  name: string;
-  position: string;
-}
-
-interface LineupData {
-  teamName: string;
-  coachName: string;
-  opponent?: string;
-  gameDate?: Date;
-  location?: string;
-  gameType?: string;
-  players: LineupPlayer[];
-}
-
-type PaperFormat = '3inch' | '4x6' | 'glovers';
-
-export class LineupPDFGenerator {
+interface AutoTableColumn {
+    header?: string;
+    dataKey?: string | number;
+    title?: string;
+    key?: string | number;
+    width?: number;
+    cellWidth?: number;
+  }
+  
+  interface AutoTableStyles {
+    fontSize?: number;
+    cellPadding?: number;
+    lineWidth?: number;
+    lineColor?: string;
+    font?: string;
+    fontStyle?: string;
+    textColor?: string;
+    fillColor?: string;
+    halign?: 'left' | 'center' | 'right';
+    valign?: 'top' | 'middle' | 'bottom';
+    minCellHeight?: number;
+  }
+  
+  interface AutoTableColumnStyles extends AutoTableStyles {
+    cellWidth?: number;
+  }
+  
+  interface AutoTableSettings {
+    theme?: 'striped' | 'grid' | 'plain';
+    startY?: number;
+    margin?: { left?: number; right?: number; top?: number; bottom?: number };
+    pageBreak?: 'auto' | 'avoid' | 'always';
+    rowPageBreak?: 'auto' | 'avoid';
+    showHead?: 'everyPage' | 'firstPage' | 'never';
+    showFoot?: 'everyPage' | 'lastPage' | 'never';
+    head?: Array<Array<string | number>>;
+    body?: Array<Array<string | number>>;
+    foot?: Array<Array<string | number>>;
+    html?: string | HTMLTableElement;
+    columnStyles?: Record<string | number, Partial<AutoTableColumnStyles>>;
+    styles?: Partial<AutoTableStyles>;
+    didParseCell?: (data: {
+      cell: { raw: unknown; styles: AutoTableStyles };
+      row: { raw: unknown; index: number };
+      section: 'head' | 'body' | 'foot';
+    }) => void;
+  }
+  
+  interface JsPDFWithAutoTable extends jsPDF {
+    autoTable: (options: AutoTableSettings) => void;
+  }
+  
+  interface LineupPlayer {
+    order: number;
+    number: string;
+    name: string;
+    position: string;
+  }
+  
+  interface LineupData {
+    teamName: string;
+    coachName: string;
+    opponent?: string;
+    gameDate?: Date;
+    location?: string;
+    gameType?: string;
+    players: LineupPlayer[];
+  }
+  
+  type PaperFormat = '3inch' | '4x6' | 'glovers';
+  
+  export class LineupPDFGenerator {
     private doc: JsPDFWithAutoTable;
     
     constructor(format: PaperFormat) {
@@ -36,23 +83,22 @@ export class LineupPDFGenerator {
         unit: 'in',
         format: [dimensions.width, dimensions.height]
       }) as JsPDFWithAutoTable;
-  }
-
-  private getPaperDimensions(format: PaperFormat) {
-    switch (format) {
-      case '3inch':
-        return { width: 3, height: 11 };  // Standard thermal roll
-      case '4x6':
-        return { width: 4, height: 6 };   // Index card size
-      case 'glovers':
-        return { width: 5.5, height: 8.5 }; // Half letter
-      default:
-        return { width: 5.5, height: 8.5 };
     }
-  }
+
+    private getPaperDimensions(format: PaperFormat) {
+        switch (format) {
+          case '3inch':
+            return { width: 3, height: 11 };  // Standard thermal roll
+          case '4x6':
+            return { width: 4, height: 6 };   // Index card size
+          case 'glovers':
+            return { width: 5.5, height: 8.5 }; // Half letter
+          default:
+            return { width: 5.5, height: 8.5 };
+        }
+    }    
 
   async generate3InchLabel(data: LineupData): Promise<Blob> {
-    // Simple list format for adhering to existing lineup card
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(10);
 
@@ -67,16 +113,14 @@ export class LineupPDFGenerator {
   }
 
   async generate4x6Card(data: LineupData): Promise<Blob> {
-    // Compact but complete lineup card
+    // Header
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(12);
-    
-    // Header
     this.doc.text(`Team: ${data.teamName}`, 0.3, 0.3);
     this.doc.text(`Coach: ${data.coachName}`, 0.3, 0.6);
 
-    // Lineup table
-    (this.doc as any).autoTable({
+    // Lineup table - now properly typed
+    this.doc.autoTable({
       startY: 0.9,
       head: [['#', 'No.', 'Player', 'Pos', 'Sub']],
       body: data.players.map(player => [
@@ -96,12 +140,11 @@ export class LineupPDFGenerator {
     return this.doc.output('blob');
   }
 
+
   async generateGloversStyle(data: LineupData): Promise<Blob> {
-    // Match Glover's layout exactly
+    // Title
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(14);
-    
-    // Title
     this.doc.text("GLOVER'S \"Line-Up Cards\"", 2.75, 0.4, { align: 'center' });
 
     // Team & Coach
@@ -116,7 +159,7 @@ export class LineupPDFGenerator {
     this.doc.text('BATTING ORDER', 0.3, 2.0, { angle: 90 });
 
     // Main lineup table
-    (this.doc as any).autoTable({
+    this.doc.autoTable({
       startY: 1.4,
       head: [['', 'NO.', 'PLAYER', 'POS', 'NO.', 'SUBSTITUTIONS', 'POS']],
       body: data.players.map((player, idx) => [
@@ -145,12 +188,9 @@ export class LineupPDFGenerator {
       margin: { left: 0.5, right: 0.5 }
     });
 
-    // Draw field diagram
-    this.drawFieldDiagram(4, 7);
-
     return this.doc.output('blob');
   }
-
+ 
   private drawFieldDiagram(x: number, y: number): void {
     // Set drawing styles
     this.doc.setDrawColor(0);

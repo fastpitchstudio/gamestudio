@@ -42,14 +42,14 @@ interface LineupPDFProps {
 type PrintFormat = '3inch' | '4x6' | 'glovers';
 
 export default function LineupPDFManager({ 
-  teamName, 
-  coachName,
-  opponent, 
-  gameDate,
-  location,
-  gameType,
-  players 
-}: LineupPDFProps) {
+    teamName, 
+    coachName,
+    opponent, 
+    gameDate,
+    location,
+    gameType,
+    players 
+  }: LineupPDFProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -109,6 +109,11 @@ export default function LineupPDFManager({
     }
   };
 
+  const handlePreview = async () => {
+    await generatePDF(selectedFormat);
+    setPreviewOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       <Card className="p-4">
@@ -157,29 +162,54 @@ export default function LineupPDFManager({
           </SelectContent>
         </Select>
 
-        <div className="flex gap-2">
-          <Button
-            onClick={handlePrint}
-            disabled={isGenerating}
-            className="flex-1"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Printer className="w-4 h-4 mr-2" />
-            )}
-            Print Lineup
-          </Button>
+     <div className="flex gap-2">
+        <Button
+          onClick={handlePrint}
+          disabled={isGenerating}
+          className="flex-1"
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Printer className="w-4 h-4 mr-2" />
+          )}
+          Print Lineup
+        </Button>
 
-          <Button
-            onClick={handleDownload}
-            variant="outline"
-            disabled={isGenerating}
-          >
-            <FileDown className="w-4 h-4 mr-2" />
-            Download
-          </Button>
-        </div>
+        <Button
+          onClick={handleDownload}
+          variant="outline"
+          disabled={isGenerating}
+        >
+          <FileDown className="w-4 h-4 mr-2" />
+          Download
+        </Button>
+
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={handlePreview}
+              disabled={isGenerating}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Preview
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Lineup Preview ({selectedFormat})</DialogTitle>
+            </DialogHeader>
+            {pdfUrl && (
+              <iframe 
+                src={pdfUrl} 
+                className="w-full h-full"
+                title="PDF Preview"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
       </div>
 
       <div className="text-sm text-gray-500">
