@@ -12,6 +12,7 @@ interface PageProps {
   searchParams?: { [key: string]: string | string[] | undefined }
 }
 
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 interface TeamPageProps {
   params: {
     id: string
@@ -20,7 +21,7 @@ interface TeamPageProps {
 
 export default async function TeamPage({ params }: TeamPageProps) {
   const supabase = createServerComponentClient<Database>({ cookies })
-  
+
    console.log('TeamPage - Accessing team:', params.id) // Debug log
     
   // Verify auth
