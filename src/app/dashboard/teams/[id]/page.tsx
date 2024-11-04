@@ -3,13 +3,16 @@ import { Loader2 } from 'lucide-react'
 import TeamPageContent from './team-page-content'
 import { getInitialTeam } from './actions'
 
+type Params = Promise<{ id: string }>;
+
 export default async function Page({ 
-  // @ts-expect-error - Next.js App Router type issue with params type
   params 
 }: { 
-  params: { id: string } 
+  params: Params
 }) {
-  const initialTeam = await getInitialTeam(params.id)
+  // Await the params before using them
+  const { id } = await params
+  const initialTeam = await getInitialTeam(id)
 
   return (
     <Suspense 
@@ -20,7 +23,7 @@ export default async function Page({
       }
     >
       <TeamPageContent 
-        teamId={params.id} 
+        teamId={id} 
         initialTeam={initialTeam} 
       />
     </Suspense>
