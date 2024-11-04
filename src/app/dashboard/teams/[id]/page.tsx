@@ -4,11 +4,13 @@ import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-export default async function TeamPage({
-  params,
-}: {
+type Props = {
   params: { id: string }
-}) {
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+// @ts-ignore
+export default async function TeamPage({ params }: Props) {
   const supabase = createServerComponentClient<Database>({ cookies })
 
   console.log('TeamPage - Accessing team:', params.id) // Debug log
