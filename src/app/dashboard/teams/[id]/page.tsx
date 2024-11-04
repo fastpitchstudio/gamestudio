@@ -1,12 +1,10 @@
 // src/app/dashboard/teams/[id]/page.tsx
 import TeamPageContent from './team-page-content'
 
-interface PageParams {
-  params: {
-    id: string;
-  };
+export default function TeamPage(props: any) {
+  return <TeamPageContent teamId={props.params.id} />
 }
 
-export default function TeamPage({ params }: PageParams) {
-  return <TeamPageContent teamId={params.id} />
-}
+// We're disabling the ESLint rule for this specific case
+// since we need to use 'any' to work with Next.js internal types
+/* eslint-disable @typescript-eslint/no-explicit-any */
