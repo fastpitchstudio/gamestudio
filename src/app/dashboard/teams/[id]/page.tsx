@@ -12,15 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Database } from '@/lib/types/database-types'
 
-interface PageParams {
-  id: string;
-}
-
-async function TeamPage({
-  params,
-}: {
-  params: PageParams;
-}) {
+export default async function TeamPage({ params }: { params: { id: string } }) {
   const supabase = createServerComponentClient<Database>({ cookies })
   
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -109,5 +101,3 @@ async function TeamPage({
     </div>
   )
 }
-
-export default TeamPage
