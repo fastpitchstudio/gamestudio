@@ -4,11 +4,11 @@ import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-export default async function TeamPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+type PageParams = {
+  params: { id: string }
+} & Record<string, any>
+
+async function TeamPage(props: PageParams) {
   const supabase = createServerComponentClient<Database>({ cookies })
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -25,7 +25,7 @@ export default async function TeamPage({
         coach_id
       )
     `)
-    .eq('id', params.id)
+    .eq('id', props.params.id)
     .eq('coach_teams.coach_id', user.id)
     .single()
 
@@ -33,7 +33,6 @@ export default async function TeamPage({
     notFound()
   }
 
-  // Transform the data to match the expected Team type
   const transformedTeam = {
     ...team,
     coach_teams: team.coach_teams.map(ct => ({
@@ -47,5 +46,7 @@ export default async function TeamPage({
     }))
   }
 
-  return <TeamPageContent teamId={params.id} initialTeam={transformedTeam} />
+  return <TeamPageContent teamId={props.params.id} initialTeam={transformedTeam} />
 }
+
+export default TeamPage
