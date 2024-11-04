@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
-    domains: [], // Add any image domains you need
+    domains: ['nzxzwpuhdyrvykgqqohy.supabase.co'], // Add Supabase storage domain
     unoptimized: false
   },
   // Optional: Add build-time environment variables validation

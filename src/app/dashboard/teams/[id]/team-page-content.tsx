@@ -3,6 +3,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import TeamRoster from '@/components/roster/roster-list'
 import {
   Card,
@@ -10,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from "lucide-react"
 import type { Database } from '@/lib/types/database-types'
 
@@ -185,11 +186,14 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
                 {team.logo_url && (
                   <div>
                     <span>Team Logo:</span>
-                    <img 
-                      src={team.logo_url} 
-                      alt={`${team.name} logo`}
-                      className="mt-2 w-20 h-20 object-contain"
-                    />
+                    <div className="relative mt-2 w-20 h-20">
+                      <Image 
+                        src={team.logo_url}
+                        alt={`${team.name} logo`}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
