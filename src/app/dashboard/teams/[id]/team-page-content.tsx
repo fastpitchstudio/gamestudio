@@ -1,33 +1,34 @@
 'use client'
-// src/app/dashboard/teams/[id]/team-page-content.tsx
+
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import TeamRoster from '@/components/roster/roster-list'
-import {  
+import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2 } from "lucide-react"
 import type { Database } from '@/lib/types/database-types'
-
 
 interface TeamPageContentProps {
   teamId: string
 }
 
 type Team = Database['public']['Tables']['teams']['Row'] & {
-    coach_teams: Array<{
-      role: string;
-      users: {
-        email: string;
-        user_metadata: {
-          full_name?: string;
-        };
+  coach_teams: Array<{
+    role: string;
+    users: {
+      email: string;
+      user_metadata: {
+        full_name?: string;
       };
-    }>;
+    };
+  }>;
 }
 
 export default function TeamPageContent({ teamId }: TeamPageContentProps) {
@@ -35,45 +36,69 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
   const supabase = createClientComponentClient<Database>()
   const [team, setTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadTeam() {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        router.push('/login')
-        return
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError || !user) {
+          router.push('/login')
+          return
+        }
+
+        const { data, error: teamError } = await supabase
+          .from('teams')
+          .select(`
+            *,
+            coach_teams!inner (
+              role,
+              users:auth.users (
+                email,
+                user_metadata
+              )
+            )
+          `)
+          .eq('id', teamId)
+          .single()
+
+        if (teamError) {
+          console.error('Error fetching team:', teamError)
+          setError('Unable to load team data')
+          return
+        }
+
+        if (!data) {
+          setError('Team not found')
+          return
+        }
+
+        setTeam(data as unknown as Team)
+      } catch (err) {
+        console.error('Error in loadTeam:', err)
+        setError('An unexpected error occurred')
+      } finally {
+        setLoading(false)
       }
-
-      const { data: teamData, error: teamError } = await supabase
-      .from('teams')
-      .select(`
-        *,
-        coach_teams!inner(
-          role,
-          users:auth.users(
-            email,
-            user_metadata
-          )
-        )
-      `)
-      .eq('id', teamId)
-      .single()
-    
-    if (teamError || !teamData) {
-      console.error('Error fetching team:', teamError)
-      router.push('/404')
-      return
-    }
-
-    setTeam(teamData as unknown as Team)
-      setLoading(false)
     }
 
     loadTeam()
   }, [teamId, supabase, router])
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
   }
 
   if (!team) {
@@ -98,12 +123,12 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
         </TabsList>
 
         <TabsContent value="roster" className="space-y-4">
-        <TeamRoster 
+          <TeamRoster 
             teamId={teamId} 
-            teamName={team?.name}
-            coachName={team?.coach_teams?.[0]?.users?.user_metadata?.full_name || 
-                    team?.coach_teams?.[0]?.users?.email}
-        />
+            teamName={team.name}
+            coachName={team.coach_teams?.[0]?.users?.user_metadata?.full_name || 
+                    team.coach_teams?.[0]?.users?.email || 'Coach'}
+          />
         </TabsContent>
 
         <TabsContent value="games">
