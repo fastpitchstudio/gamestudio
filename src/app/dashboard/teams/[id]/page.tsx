@@ -5,10 +5,14 @@ import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-// Declaring the function type with no explicit params type
+type ServerPageProps<Params = unknown> = {
+  params: Params;
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
 export default async function TeamPage({
-  params
-}: any) {
+  params,
+}: ServerPageProps<{ id: string }>) {
   'use server'
   const teamId = await Promise.resolve(params.id)
   const supabase = createServerComponentClient<Database>({ cookies })
