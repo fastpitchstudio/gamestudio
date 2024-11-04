@@ -3,13 +3,17 @@ import { Loader2 } from 'lucide-react'
 import TeamPageContent from './team-page-content'
 import { getInitialTeam } from './actions'
 
-// Minimal page component with no type annotations
-export default function Page(props: any) {
+interface PageParams {
+  params: { id: string };
+  searchParams?: Record<string, string | string[] | undefined>;
+}
+
+// Both components use the same type
+export default function Page(props: PageParams) {
   return <TeamPage {...props} />
 }
 
-// Helper component with proper typing
-async function TeamPage({ params }: { params: { id: string } }) {
+async function TeamPage({ params }: PageParams) {
   const initialTeam = await getInitialTeam(params.id)
 
   return (
