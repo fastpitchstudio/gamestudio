@@ -9,7 +9,7 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-// @ts-ignore
+// @@ts-expect-error -- vercel cannot handle this
 export default async function TeamPage({ params }: Props) {
   const supabase = createServerComponentClient<Database>({ cookies })
 
