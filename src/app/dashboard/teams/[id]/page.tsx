@@ -3,7 +3,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import TeamRoster from '@/components/roster/roster-list'
-import {
+import {  
   Card,
   CardContent,
   CardHeader,
