@@ -1,7 +1,7 @@
 // lib/supabase/debug.ts
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '../types/database-types'
-import { Session, User } from '@supabase/supabase-js'
+//import { Session, User } from '@supabase/supabase-js'
 
 export async function debugPolicies() {
   const supabase = createClientComponentClient<Database>()
