@@ -17,10 +17,16 @@ interface TeamPageContentProps {
   teamId: string
 }
 
+type Team = Database['public']['Tables']['teams']['Row'] & {
+  coach_teams: {
+    role: string;
+  }[];
+}
+
 export default function TeamPageContent({ teamId }: TeamPageContentProps) {
   const router = useRouter()
   const supabase = createClientComponentClient<Database>()
-  const [team, setTeam] = useState<any>(null)
+  const [team, setTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,7 +52,7 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
         return
       }
 
-      setTeam(teamData)
+      setTeam(teamData as Team)
       setLoading(false)
     }
 
