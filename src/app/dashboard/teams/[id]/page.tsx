@@ -14,7 +14,7 @@ import type { Database } from '@/lib/types/database-types'
 
 type Props = {
     params: { id: string }
-    searchParams: { [key: string]: string | string[] | undefined }
+    searchParams?: { [key: string]: string | string[] | undefined }
 }
 
 export default async function TeamPage({ params }: Props) {
