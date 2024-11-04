@@ -4,13 +4,6 @@ import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-interface PageProps {
-  params: {
-    [key: string]: string | string[]
-  }
-  searchParams?: { [key: string]: string | string[] | undefined }
-}
-
 export default async function TeamPage({ params }: { params: { id: string } }) {
   console.log('TeamPage - Accessing team:', params.id) // Debug log
   
