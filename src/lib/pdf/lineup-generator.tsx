@@ -1,15 +1,6 @@
 // src/lib/pdf/lineup-generator.ts
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-
-interface AutoTableColumn {
-    header?: string;
-    dataKey?: string | number;
-    title?: string;
-    key?: string | number;
-    width?: number;
-    cellWidth?: number;
-  }
   
   interface AutoTableStyles {
     fontSize?: number;
@@ -30,24 +21,12 @@ interface AutoTableColumn {
   }
   
   interface AutoTableSettings {
-    theme?: 'striped' | 'grid' | 'plain';
     startY?: number;
     margin?: { left?: number; right?: number; top?: number; bottom?: number };
-    pageBreak?: 'auto' | 'avoid' | 'always';
-    rowPageBreak?: 'auto' | 'avoid';
-    showHead?: 'everyPage' | 'firstPage' | 'never';
-    showFoot?: 'everyPage' | 'lastPage' | 'never';
     head?: Array<Array<string | number>>;
     body?: Array<Array<string | number>>;
-    foot?: Array<Array<string | number>>;
-    html?: string | HTMLTableElement;
-    columnStyles?: Record<string | number, Partial<AutoTableColumnStyles>>;
     styles?: Partial<AutoTableStyles>;
-    didParseCell?: (data: {
-      cell: { raw: unknown; styles: AutoTableStyles };
-      row: { raw: unknown; index: number };
-      section: 'head' | 'body' | 'foot';
-    }) => void;
+    columnStyles?: Record<string | number, Partial<AutoTableColumnStyles>>;
   }
   
   interface JsPDFWithAutoTable extends jsPDF {
