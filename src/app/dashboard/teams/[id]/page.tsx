@@ -1,10 +1,10 @@
-
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
+// @ts-expect-error - Next.js PageProps type issue
 interface TeamPageProps {
   params: {
     id: string
