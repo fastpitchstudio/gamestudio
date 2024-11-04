@@ -1,4 +1,4 @@
-// lib/supabase/teams-server.ts
+// src/lib/supabase/teams-server.ts
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/types/database-types'
@@ -12,7 +12,10 @@ export async function getCoachTeams(coachId: string): Promise<Team[]> {
   
   const { data, error } = await supabase
     .from('teams')
-    .select('*, coach_teams!inner(*)')
+    .select(`
+      *,
+      coach_teams!inner (*)
+    `)
     .eq('coach_teams.coach_id', coachId)
 
   if (error) {
@@ -20,7 +23,8 @@ export async function getCoachTeams(coachId: string): Promise<Team[]> {
     throw error
   }
 
-  return data?.map(({ coach_teams, ...team }) => team as Team) ?? []
+  // Omit coach_teams from the response
+  return (data || []).map(({ coach_teams: _, ...team }) => team as Team)
 }
 
 /**
