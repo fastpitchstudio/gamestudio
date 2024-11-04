@@ -6,7 +6,8 @@ import type { Database } from '@/lib/types/database-types'
 
 type PageParams = {
   params: { id: string }
-} & Record<string, any>
+  searchParams: { [key: string]: string | string[] | undefined }
+}
 
 async function TeamPage(props: PageParams) {
   const supabase = createServerComponentClient<Database>({ cookies })
