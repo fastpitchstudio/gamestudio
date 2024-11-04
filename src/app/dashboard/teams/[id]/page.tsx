@@ -18,7 +18,7 @@ interface TeamPageProps {
     id: string
   }
 }
-
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 export default async function TeamPage({ params }: TeamPageProps) {
   const supabase = createServerComponentClient<Database>({ cookies })
 
