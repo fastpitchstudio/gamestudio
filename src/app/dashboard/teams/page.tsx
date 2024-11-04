@@ -41,7 +41,11 @@ async function TeamsList() {
     return (
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {teams.map((team) => (
-          <Link key={team.id} href={`/dashboard/teams/${team.id}`}>
+          <Link 
+            key={team.id} 
+            href={`/dashboard/teams/${team.id}`}
+            className="block"
+          >
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

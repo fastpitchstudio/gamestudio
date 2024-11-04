@@ -15,11 +15,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
 import type { Database } from '@/lib/types/database-types'
 
-interface TeamPageContentProps {
-  teamId: string
-}
-
-type Team = Database['public']['Tables']['teams']['Row'] & {
+type Team = {
+  id: string;
+  name: string;
+  division: string | null;
+  season: string | null;
+  team_color: string | null;
+  logo_url: string | null;
+  created_at: string;
+  updated_at: string;
   coach_teams: Array<{
     role: string;
     users: {
@@ -31,11 +35,16 @@ type Team = Database['public']['Tables']['teams']['Row'] & {
   }>;
 }
 
-export default function TeamPageContent({ teamId }: TeamPageContentProps) {
+interface TeamPageContentProps {
+  teamId: string;
+  initialTeam: Team;
+}
+
+export default function TeamPageContent({ teamId, initialTeam }: TeamPageContentProps) {
   const router = useRouter()
   const supabase = createClientComponentClient<Database>()
-  const [team, setTeam] = useState<Team | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [team, setTeam] = useState<Team>(initialTeam)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -47,16 +56,13 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
           return
         }
 
-        const { data, error: teamError } = await supabase
+        const { data: teamData, error: teamError } = await supabase
           .from('teams')
           .select(`
             *,
-            coach_teams!inner (
+            coach_teams (
               role,
-              users:auth.users (
-                email,
-                user_metadata
-              )
+              coach_id
             )
           `)
           .eq('id', teamId)
@@ -68,12 +74,26 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
           return
         }
 
-        if (!data) {
+        if (!teamData) {
           setError('Team not found')
           return
         }
 
-        setTeam(data as unknown as Team)
+        // Transform the data to match the Team type
+        const transformedData = {
+          ...teamData,
+          coach_teams: teamData.coach_teams.map(ct => ({
+            role: ct.role,
+            users: {
+              email: user.email || '',
+              user_metadata: {
+                full_name: user.user_metadata?.full_name
+              }
+            }
+          }))
+        }
+
+        setTeam(transformedData as Team)
       } catch (err) {
         console.error('Error in loadTeam:', err)
         setError('An unexpected error occurred')
@@ -82,8 +102,12 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
       }
     }
 
-    loadTeam()
-  }, [teamId, supabase, router])
+    // Only reload if needed
+    if (!team) {
+      setLoading(true)
+      loadTeam()
+    }
+  }, [teamId, supabase, router, team])
 
   if (loading) {
     return (

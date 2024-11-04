@@ -10,6 +10,8 @@ import type { Team } from './teams-client'
 export async function getCoachTeams(coachId: string): Promise<Team[]> {
   const supabase = createServerComponentClient<Database>({ cookies })
   
+  console.log('getCoachTeams - Fetching teams for coach:', coachId) // Debug log
+  
   const { data, error } = await supabase
     .from('teams')
     .select(`
@@ -23,6 +25,8 @@ export async function getCoachTeams(coachId: string): Promise<Team[]> {
     throw error
   }
 
+  console.log('getCoachTeams - Found teams:', data?.length) // Debug log
+
   // Omit coach_teams from the response
   return (data || []).map(({ coach_teams: _, ...team }) => team as Team)
 }
@@ -32,6 +36,8 @@ export async function getCoachTeams(coachId: string): Promise<Team[]> {
  */
 export async function getTeamById(teamId: string): Promise<Team | null> {
   const supabase = createServerComponentClient<Database>({ cookies })
+  
+  console.log('getTeamById - Fetching team:', teamId) // Debug log
   
   const { data, error } = await supabase
     .from('teams')
@@ -43,6 +49,8 @@ export async function getTeamById(teamId: string): Promise<Team | null> {
     console.error('Error fetching team:', error)
     throw error
   }
+
+  console.log('getTeamById - Found team:', data?.id) // Debug log
 
   return data
 }
