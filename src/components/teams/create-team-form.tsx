@@ -23,6 +23,40 @@ interface FormState {
   logo_file?: File | null
   logo_preview?: string
 }
+interface DebugResults {
+  auth?: {
+    user: string | undefined
+    email: string | undefined
+    sessionInfo: {
+      accessToken: 'present' | 'missing'
+      expiresAt: number | undefined
+      tokenDetails: {
+        length: number
+        prefix: string
+      } | null
+    }
+    metadata: Record<string, any>
+    error: unknown
+    timestamp: string
+  }
+  insertTest?: {
+    success: boolean
+    error: {
+      message: string
+      code: string
+      details: string
+      hint: string
+    } | null
+    data: unknown
+  }
+  finalCheck?: {
+    hasValidSession: boolean
+    tokenPresent: boolean
+    timestamp: string
+  }
+  error?: string
+  errorTimestamp?: string
+}
 
 const STORAGE_KEY = 'create_team_form_state'
 
@@ -31,7 +65,7 @@ export function CreateTeamForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [isDebugging, setIsDebugging] = useState(false)
   const [error, setError] = useState('')
-  const [debugResults, setDebugResults] = useState<any>(null)
+  const [debugResults, setDebugResults] = useState<DebugResults | null>(null)
   const supabase = createClientComponentClient<Database>()
   
   // Form state with persistence
