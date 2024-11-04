@@ -4,24 +4,18 @@ import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-type Props = {
-  params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-// @@ts-expect-error -- vercel cannot handle this
-export default async function TeamPage({ params }: Props) {
+export default async function TeamPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supabase = createServerComponentClient<Database>({ cookies })
 
-  console.log('TeamPage - Accessing team:', params.id) // Debug log
-    
-  // Verify auth
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
     throw new Error('Unauthorized')
   }
 
-  // Get team with coach access check
   const { data: team, error: teamError } = await supabase
     .from('teams')
     .select(`
@@ -36,7 +30,6 @@ export default async function TeamPage({ params }: Props) {
     .single()
 
   if (teamError || !team) {
-    console.log('TeamPage - No authorized team found:', { teamError }) // Debug log
     notFound()
   }
 
@@ -53,8 +46,6 @@ export default async function TeamPage({ params }: Props) {
       }
     }))
   }
-
-  console.log('TeamPage - Found team:', transformedTeam.id) // Debug log
 
   return <TeamPageContent teamId={params.id} initialTeam={transformedTeam} />
 }
