@@ -1,11 +1,11 @@
 // lib/supabase/debug.ts
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '../types/database-types'
-//import { Session, User } from '@supabase/supabase-js'
+import { Session, User } from '@supabase/supabase-js'
 
 export async function debugPolicies() {
   const supabase = createClientComponentClient<Database>()
-  const results: Record<string, any> = {}
+  const results: Record<string, unknown> = {}
 
   try {
     // 1. Get auth status with token info

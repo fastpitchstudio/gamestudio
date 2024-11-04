@@ -35,7 +35,7 @@ interface DebugResults {
         prefix: string
       } | null
     }
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
     error: unknown
     timestamp: string
   }
