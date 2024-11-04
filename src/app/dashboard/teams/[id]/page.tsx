@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Database } from '@/lib/types/database-types'
-import type { GetServerSideProps } from 'next'
 
 type Props = {
     params: Promise<{ id: string }>
