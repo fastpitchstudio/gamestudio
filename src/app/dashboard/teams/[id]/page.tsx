@@ -1,15 +1,16 @@
+import { Suspense } from 'react'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import TeamPageContent from './team-page-content'
 import type { Database } from '@/lib/types/database-types'
 
-type PageParams = {
-  params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-async function TeamPage(props: PageParams) {
+// Declaring the function type with no explicit params type
+export default async function TeamPage({
+  params
+}: any) {
+  'use server'
+  const teamId = await Promise.resolve(params.id)
   const supabase = createServerComponentClient<Database>({ cookies })
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -26,7 +27,7 @@ async function TeamPage(props: PageParams) {
         coach_id
       )
     `)
-    .eq('id', props.params.id)
+    .eq('id', teamId)
     .eq('coach_teams.coach_id', user.id)
     .single()
 
@@ -47,7 +48,9 @@ async function TeamPage(props: PageParams) {
     }))
   }
 
-  return <TeamPageContent teamId={props.params.id} initialTeam={transformedTeam} />
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TeamPageContent teamId={teamId} initialTeam={transformedTeam} />
+    </Suspense>
+  )
 }
-
-export default TeamPage
