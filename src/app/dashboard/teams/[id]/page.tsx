@@ -11,10 +11,20 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Database } from '@/lib/types/database-types'
+import type { GetServerSideProps } from 'next'
 
 type Props = {
     params: { id: string }
     searchParams?: { [key: string]: string | string[] | undefined }
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { id } = context.params as { id: string }
+  return {
+    props: {
+      params: { id }
+    }
+  }
 }
 
 export default async function TeamPage({ params }: Props) {
