@@ -13,11 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Database } from '@/lib/types/database-types'
 
 type Props = {
-    params: { id: string }
+    params: Promise<{ id: string }>
     searchParams: { [key: string]: string | string[] | undefined }
 }
 
 export default async function TeamPage({ params }: Props) {
+  const resolvedParams = await params;
   const supabase = createServerComponentClient<Database>({ cookies })
   
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -32,7 +33,7 @@ export default async function TeamPage({ params }: Props) {
       *,
       coach_teams!inner(role)
     `)
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .single()
 
   if (teamError || !team) {
@@ -58,7 +59,7 @@ export default async function TeamPage({ params }: Props) {
         </TabsList>
 
         <TabsContent value="roster" className="space-y-4">
-          <TeamRoster teamId={params.id} />
+          <TeamRoster teamId={resolvedParams.id} />
         </TabsContent>
 
         <TabsContent value="games">
