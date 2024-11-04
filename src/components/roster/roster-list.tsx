@@ -36,7 +36,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { UserPlus, PencilIcon, Save, X, Search, ArrowUpDown } from 'lucide-react'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { UserPlus, PencilIcon, Save, X, Search, ArrowUpDown, Trash2 } from 'lucide-react'
 import type { Database } from '@/lib/types/database-types'
 
 type Player = Database['public']['Tables']['players']['Row']
@@ -51,6 +68,12 @@ interface NewPlayerData {
   last_name: string
   preferred_positions: string[]
 }
+
+interface ActionButtonsProps {
+    player: Player;
+    onDelete: (playerId: string) => Promise<void>;
+    onEdit: (player: Player) => void;
+  }
 
 const POSITIONS = [
   'P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF'
@@ -105,6 +128,67 @@ const RosterSkeleton = () => {
     )
   }
 
+  const ActionButtons = ({ player, onDelete, onEdit }: ActionButtonsProps) => {
+    return (
+      <div className="flex items-center gap-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onEdit(player)}
+                className="h-8 w-8"
+              >
+                <PencilIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit player details</p>
+            </TooltipContent>
+          </Tooltip>
+  
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to remove {player.first_name} {player.last_name} from the roster? 
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(player.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Remove from roster</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    )
+  }
+
   const NewPlayerRow = ({ onSave, onCancel }: { 
     onSave: (player: PlayerInsert) => void
     onCancel: () => void 
@@ -124,6 +208,7 @@ const RosterSkeleton = () => {
       }))
     }
   }
+
 
   return (
     <TableRow className="bg-muted/50">
@@ -267,6 +352,22 @@ useEffect(() => {
         } catch (err) {
         console.error('Error adding player:', err)
         setError('Failed to add player')
+        }
+    }
+    const handleDeletePlayer = async (playerId: string) => {
+        try {
+            const { error } = await supabase
+            .from('players')
+            .delete()
+            .eq('id', playerId)
+
+            if (error) throw error
+            
+            setPlayers(prev => prev.filter(p => p.id !== playerId))
+        } catch (err) {
+            console.error('Error deleting player:', err)
+            // You might want to add a toast notification here
+            setError('Failed to delete player')
         }
     }
 
@@ -498,14 +599,11 @@ useEffect(() => {
                     </div>
                     </TableCell>
                     <TableCell>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {/* TODO: Open edit modal */}}
-                    >
-                        <PencilIcon className="h-4 w-4 mr-1" />
-                        Details
-                    </Button>
+                    <ActionButtons
+                        player={player}
+                        onDelete={handleDeletePlayer}
+                        onEdit={() => {/* TODO: Open edit modal */}}
+                    />
                     </TableCell>
                 </TableRow>
                 ))}
