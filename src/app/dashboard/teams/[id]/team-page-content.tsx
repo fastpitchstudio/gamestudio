@@ -13,14 +13,21 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Database } from '@/lib/types/database-types'
 
+
 interface TeamPageContentProps {
   teamId: string
 }
 
 type Team = Database['public']['Tables']['teams']['Row'] & {
-  coach_teams: {
-    role: string;
-  }[];
+    coach_teams: Array<{
+      role: string;
+      users: {
+        email: string;
+        user_metadata: {
+          full_name?: string;
+        };
+      };
+    }>;
 }
 
 export default function TeamPageContent({ teamId }: TeamPageContentProps) {
@@ -38,21 +45,27 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
       }
 
       const { data: teamData, error: teamError } = await supabase
-        .from('teams')
-        .select(`
-          *,
-          coach_teams!inner(role)
-        `)
-        .eq('id', teamId)
-        .single()
+      .from('teams')
+      .select(`
+        *,
+        coach_teams!inner(
+          role,
+          users:auth.users(
+            email,
+            user_metadata
+          )
+        )
+      `)
+      .eq('id', teamId)
+      .single()
+    
+    if (teamError || !teamData) {
+      console.error('Error fetching team:', teamError)
+      router.push('/404')
+      return
+    }
 
-      if (teamError || !teamData) {
-        console.error('Error fetching team:', teamError)
-        router.push('/404')
-        return
-      }
-
-      setTeam(teamData as Team)
+    setTeam(teamData as unknown as Team)
       setLoading(false)
     }
 
@@ -85,7 +98,12 @@ export default function TeamPageContent({ teamId }: TeamPageContentProps) {
         </TabsList>
 
         <TabsContent value="roster" className="space-y-4">
-          <TeamRoster teamId={teamId} />
+        <TeamRoster 
+            teamId={teamId} 
+            teamName={team?.name}
+            coachName={team?.coach_teams?.[0]?.users?.user_metadata?.full_name || 
+                    team?.coach_teams?.[0]?.users?.email}
+        />
         </TabsContent>
 
         <TabsContent value="games">

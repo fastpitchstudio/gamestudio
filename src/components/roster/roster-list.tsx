@@ -53,7 +53,14 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { UserPlus, PencilIcon, Save, X, Search, ArrowUpDown, Trash2 } from 'lucide-react'
+import { 
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+  } from "@/components/ui/dialog"
+import LineupPDFManager from '@/components/game/lineup/lineup-pdf-manager'
+import { UserPlus, PencilIcon, Save, X, Search, ArrowUpDown, Trash2, ClipboardList } from 'lucide-react'
 import type { Database } from '@/lib/types/database-types'
 
 type Player = Database['public']['Tables']['players']['Row']
@@ -296,7 +303,13 @@ const RosterSkeleton = () => {
   )
 }
 
-export default function TeamRoster({ teamId }: { teamId: string }) {
+interface TeamRosterProps {
+    teamId: string;
+    teamName?: string;
+    coachName?: string;
+  }
+  
+  export default function TeamRoster({ teamId, teamName, coachName }: TeamRosterProps) {
     const [isClient, setIsClient] = useState(false)
     const [players, setPlayers] = useState<Player[]>([])
     const [loading, setLoading] = useState(true)
@@ -307,6 +320,7 @@ export default function TeamRoster({ teamId }: { teamId: string }) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedPositions, setSelectedPositions] = useState<string[]>([])
     const supabase = createClientComponentClient<Database>()
+    const [lineupDialogOpen, setLineupDialogOpen] = useState(false)
   
 // Handle client-side initialization
 useEffect(() => {
@@ -445,13 +459,23 @@ useEffect(() => {
         <CardHeader>
             <div className="flex justify-between items-center">
             <CardTitle>Team Roster</CardTitle>
-            <Button
+            <div className="flex gap-2">
+                <Button
+                variant="outline"
+                onClick={() => setLineupDialogOpen(true)}
+                disabled={players.length === 0}
+                >
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Generate Lineup
+                </Button>
+                <Button
                 onClick={() => setShowNewPlayer(true)}
                 disabled={showNewPlayer}
-            >
+                >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Player
-            </Button>
+                </Button>
+            </div>
             </div>
         </CardHeader>
         <CardContent>
@@ -616,6 +640,27 @@ useEffect(() => {
                 )}
             </TableBody>
             </Table>
+            <Dialog open={lineupDialogOpen} onOpenChange={setLineupDialogOpen}>
+            <DialogContent className="max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Generate Lineup from Roster</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+                <LineupPDFManager
+                teamName={teamName || ""}
+                coachName={coachName || ""}
+                players={sortedPlayers
+                    .filter(p => p.active)
+                    .map((player, index) => ({
+                    order: index + 1,
+                    number: player.number || "",
+                    name: `${player.first_name} ${player.last_name}`,
+                    position: player.preferred_positions?.[0] || "DH"
+                    }))}
+                />
+            </div>
+            </DialogContent>
+        </Dialog>
         </CardContent>
         </Card>
     )
