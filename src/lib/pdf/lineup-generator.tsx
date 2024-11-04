@@ -2,6 +2,11 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+// Add type for jsPDF with autoTable plugin
+interface JsPDFWithAutoTable extends jsPDF {
+    autoTable: (options: unknown) => void;
+}
+
 interface LineupPlayer {
   order: number;
   number: string;
@@ -22,16 +27,15 @@ interface LineupData {
 type PaperFormat = '3inch' | '4x6' | 'glovers';
 
 export class LineupPDFGenerator {
-  private doc: jsPDF;
-  
-  constructor(format: PaperFormat) {
-    // Initialize with correct paper size
-    const dimensions = this.getPaperDimensions(format);
-    this.doc = new jsPDF({
-      orientation: format === 'glovers' ? 'portrait' : 'landscape',
-      unit: 'in',
-      format: [dimensions.width, dimensions.height]
-    });
+    private doc: JsPDFWithAutoTable;
+    
+    constructor(format: PaperFormat) {
+      const dimensions = this.getPaperDimensions(format);
+      this.doc = new jsPDF({
+        orientation: format === 'glovers' ? 'portrait' : 'landscape',
+        unit: 'in',
+        format: [dimensions.width, dimensions.height]
+      }) as JsPDFWithAutoTable;
   }
 
   private getPaperDimensions(format: PaperFormat) {

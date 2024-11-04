@@ -16,7 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import { 
   Printer, 
   FileDown, 
@@ -109,11 +109,6 @@ export default function LineupPDFManager({
     }
   };
 
-  const handlePreview = async () => {
-    await generatePDF(selectedFormat);
-    setPreviewOpen(true);
-  };
-
   return (
     <div className="space-y-4">
       <Card className="p-4">
@@ -149,16 +144,16 @@ export default function LineupPDFManager({
           value={selectedFormat}
           onValueChange={(value: PrintFormat) => {
             setSelectedFormat(value);
-            setPdfUrl(null); // Clear cached PDF when format changes
+            setPdfUrl(null);
           }}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select print format" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="3inch">3" Label (Player List Only)</SelectItem>
-            <SelectItem value="4x6">4x6" Card</SelectItem>
-            <SelectItem value="glovers">Glover's Style (5.5x8.5")</SelectItem>
+            <SelectItem value="3inch">3&quot; Label (Player List Only)</SelectItem>
+            <SelectItem value="4x6">4x6&quot; Card</SelectItem>
+            <SelectItem value="glovers">Glover&apos;s Style (5.5x8.5&quot;)</SelectItem>
           </SelectContent>
         </Select>
 
@@ -184,41 +179,16 @@ export default function LineupPDFManager({
             <FileDown className="w-4 h-4 mr-2" />
             Download
           </Button>
-
-          <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={handlePreview}
-                disabled={isGenerating}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Preview
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl h-[80vh]">
-              <DialogHeader>
-                <DialogTitle>Lineup Preview ({selectedFormat})</DialogTitle>
-              </DialogHeader>
-              {pdfUrl && (
-                <iframe 
-                  src={pdfUrl} 
-                  className="w-full h-full"
-                  title="PDF Preview"
-                />
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
       <div className="text-sm text-gray-500">
         {selectedFormat === '3inch' ? (
-          "Tip: 3\" label contains only the player list for affixing to an existing lineup card"
+          'Tip: 3&quot; label contains only the player list for affixing to an existing lineup card'
         ) : selectedFormat === '4x6' ? (
-          "Tip: 4x6\" card is ideal for index card printers"
+          'Tip: 4x6&quot; card is ideal for index card printers'
         ) : (
-          "Tip: Glover's style matches standard half-letter lineup cards"
+          'Tip: Glover&apos;s style matches standard half-letter lineup cards'
         )}
       </div>
     </div>
