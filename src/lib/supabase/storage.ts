@@ -76,3 +76,38 @@ export async function uploadTeamLogo(file: File | null): Promise<string | null> 
     throw new Error('Upload failed. Please try again.')
   }
 }
+
+export async function getSignedUrl(fullUrl: string) {
+  const supabase = createClientComponentClient<Database>();
+  
+  try {
+    // Parse the URL - replace 'public' with 'authenticated' in the path
+    const url = new URL(fullUrl);
+    const correctedPath = url.pathname.replace('/storage/v1/object/public/', '');
+    const [bucket, ...pathParts] = correctedPath.split('/');
+    const filePath = pathParts.join('/');
+
+    console.log('Storage request:', {
+      bucket,
+      filePath,
+      originalUrl: fullUrl
+    });
+
+    const { data, error } = await supabase
+      .storage
+      .from(bucket)
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+
+    console.log('Successfully generated signed URL');
+    return data.signedUrl;
+
+  } catch (error) {
+    console.error('Error in getSignedUrl:', error);
+    return null;
+  }
+}

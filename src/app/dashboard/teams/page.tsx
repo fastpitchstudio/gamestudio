@@ -1,25 +1,30 @@
 // app/dashboard/teams/page.tsx
+
 import { Suspense } from 'react'
 import { getCoachTeams } from '@/lib/supabase/teams-server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PlusCircle } from 'lucide-react'
 import Link from 'next/link'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { redirect } from 'next/navigation'
+import { TeamLogo } from '@/components/shared/team-logo'
 import type { Database } from '@/lib/types/database-types'
 
 async function TeamsList() {
-  const supabase = createServerComponentClient<Database>({ cookies })
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
-  if (userError || !user) {
-    redirect('/login')
-  }
-
   try {
+    const cookieStore = cookies()
+    const supabase = createServerComponentClient<Database>({
+      cookies: () => cookieStore
+    })
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      redirect('/login')
+    }
+
     const teams = await getCoachTeams(user.id)
 
     if (teams.length === 0) {
@@ -49,14 +54,12 @@ async function TeamsList() {
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {team.logo_url && (
-                    <img 
-                      src={team.logo_url} 
-                      alt={team.name} 
-                      className="w-8 h-8 rounded-full"
-                    />
-                  )}
-                  {team.name}
+                  <TeamLogo 
+                    logoUrl={team.logo_url} 
+                    teamName={team.name}
+                    size="sm"
+                  />
+                  <span className="ml-2">{team.name}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -75,7 +78,7 @@ async function TeamsList() {
       </div>
     )
   } catch (error) {
-    console.error('Error fetching teams:', error)
+    console.error('Error in TeamsList:', error)
     return (
       <div className="text-center text-red-500">
         <p>Error loading teams. Please try again.</p>
@@ -84,7 +87,7 @@ async function TeamsList() {
   }
 }
 
-export default function TeamsPage() {
+export default async function TeamsPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -97,6 +100,7 @@ export default function TeamsPage() {
         </Link>
       </div>
       <Suspense fallback={<div>Loading teams...</div>}>
+        {/* @ts-expect-error Async Server Component */}
         <TeamsList />
       </Suspense>
     </div>

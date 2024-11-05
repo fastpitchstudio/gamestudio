@@ -3,10 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
-    domains: [
-      'nzxzwpuhdyrvykgqqohy.supabase.co'
-    ],
-    unoptimized: false
+    domains: ['nzxzwpuhdyrvykgqqohy.supabase.co'],
+    unoptimized: true,
   },
   // Optional: Add build-time environment variables validation
   env: {

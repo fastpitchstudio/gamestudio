@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from "lucide-react"
 import type { Database } from '@/lib/types/database-types'
+import { TeamLogo } from '@/components/shared/team-logo'
+
 
 type Team = {
   id: string;
@@ -186,12 +188,11 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
                 {team.logo_url && (
                   <div>
                     <span>Team Logo:</span>
-                    <div className="relative mt-2 w-20 h-20">
-                      <Image 
-                        src={team.logo_url}
-                        alt={`${team.name} logo`}
-                        fill
-                        className="object-contain"
+                    <div className="mt-2">
+                      <TeamLogo 
+                        logoUrl={team.logo_url} 
+                        teamName={team.name}
+                        size="lg"
                       />
                     </div>
                   </div>
