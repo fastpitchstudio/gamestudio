@@ -3,7 +3,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
+//import Image from 'next/image'
 import TeamRoster from '@/components/roster/roster-list'
 import {
   Card,
