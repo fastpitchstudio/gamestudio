@@ -100,7 +100,6 @@ export default async function TeamsPage() {
         </Link>
       </div>
       <Suspense fallback={<div>Loading teams...</div>}>
-        {/* @ts-expect-error Async Server Component */}
         <TeamsList />
       </Suspense>
     </div>
