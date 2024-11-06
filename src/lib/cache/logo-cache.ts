@@ -1,3 +1,5 @@
+'use client';
+
 // src/lib/cache/logo-cache.ts
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/types/database-types';
@@ -11,12 +13,9 @@ class LogoCacheService {
   private memoryCache: Map<string, CacheEntry>;
   private readonly CACHE_PREFIX = 'team_logo_';
   private readonly CACHE_DURATION = 45 * 60 * 1000; // 45 minutes in milliseconds
-  private hasLocalStorage: boolean;
 
   constructor() {
     this.memoryCache = new Map();
-    // Check if localStorage is available
-    this.hasLocalStorage = typeof window !== 'undefined' && window.localStorage !== undefined;
   }
 
   private getMemoryCacheKey(logoUrl: string): string {
@@ -32,7 +31,7 @@ class LogoCacheService {
   }
 
   private getFromLocalStorage(key: string): CacheEntry | null {
-    if (!this.hasLocalStorage) return null;
+    if (typeof window === 'undefined') return null;
     
     try {
       const item = localStorage.getItem(key);
@@ -46,7 +45,7 @@ class LogoCacheService {
   }
 
   private setInLocalStorage(key: string, value: CacheEntry): void {
-    if (!this.hasLocalStorage) return;
+    if (typeof window === 'undefined') return;
 
     try {
       localStorage.setItem(key, JSON.stringify(value));
@@ -56,6 +55,8 @@ class LogoCacheService {
   }
 
   async getSignedUrl(logoUrl: string): Promise<string | null> {
+    if (typeof window === 'undefined') return null;
+
     // 1. Check memory cache first
     const memoryCacheKey = this.getMemoryCacheKey(logoUrl);
     const memoryCacheEntry = this.memoryCache.get(memoryCacheKey);
@@ -119,12 +120,12 @@ class LogoCacheService {
   }
 
   clearCache(): void {
+    if (typeof window === 'undefined') return;
+
     // Clear memory cache
     this.memoryCache.clear();
 
     // Clear localStorage cache
-    if (!this.hasLocalStorage) return;
-
     try {
       const keys = Object.keys(localStorage);
       keys.forEach(key => {

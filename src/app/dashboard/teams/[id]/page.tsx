@@ -1,3 +1,4 @@
+// app/dashboard/teams/[id]/page.tsx
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import TeamPageContent from './team-page-content'

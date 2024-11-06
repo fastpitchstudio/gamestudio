@@ -14,50 +14,57 @@ export async function getInitialTeam(teamId: string): Promise<Team> {
   
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
-    throw new Error('Unauthorized')
+    throw new Error(`Unauthorized: ${userError?.message || 'No user found'}`)
   }
 
-  const { data, error: teamError } = await supabase
-    .from('teams')
-    .select(`
-      *,
-      coach_teams (
-        id,
-        team_id,
-        role
-      )
-    `)
-    .eq('id', teamId)
-    .eq('coach_teams.coach_id', user.id)
-    .single()
+  try {
+    // Updated query to remove the users join since we already have the user data
+    const { data, error: teamError } = await supabase
+      .from('teams')
+      .select(`
+        *,
+        coach_teams!inner (
+          id,
+          team_id,
+          role
+        )
+      `)
+      .eq('id', teamId)
+      .eq('coach_teams.coach_id', user.id)
+      .single()
 
-  if (teamError || !data) {
-    notFound()
-  }
+    if (teamError || !data) {
+      console.error('Team error:', teamError)
+      notFound()
+    }
 
-  const baseTeam = data as Database['public']['Tables']['teams']['Row'] & {
-    coach_teams: Array<{
-      id: string;
-      team_id: string;
-      role: string;
-    }>;
-  };
+    const baseTeam = data as Database['public']['Tables']['teams']['Row'] & {
+      coach_teams: Array<{
+        id: string;
+        team_id: string;
+        role: string;
+      }>;
+    };
 
-  // Transform the data to include user information
-  const transformedTeam: Team = {
-    ...baseTeam,
-    coach_teams: baseTeam.coach_teams.map(ct => ({
-      id: ct.id,
-      team_id: ct.team_id,
-      role: ct.role,
-      users: {
-        email: user.email || '',
-        user_metadata: {
-          full_name: user.user_metadata?.full_name
+    // Transform the data to include user information that we already have
+    const transformedTeam: Team = {
+      ...baseTeam,
+      coach_teams: baseTeam.coach_teams.map(ct => ({
+        id: ct.id,
+        team_id: ct.team_id,
+        role: ct.role,
+        users: {
+          email: user.email || '',
+          user_metadata: {
+            full_name: user.user_metadata?.full_name
+          }
         }
-      }
-    }))
-  }
+      }))
+    }
 
-  return transformedTeam
+    return transformedTeam
+  } catch (error) {
+    console.error('Error in getInitialTeam:', error)
+    throw error
+  }
 }

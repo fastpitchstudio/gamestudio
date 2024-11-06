@@ -3,8 +3,8 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-//import Image from 'next/image'
 import TeamRoster from '@/components/roster/roster-list'
+import { TeamSettings } from '@/components/teams/team-settings'
 import {
   Card,
   CardContent,
@@ -15,28 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from "lucide-react"
 import type { Database } from '@/lib/types/database-types'
-import { TeamLogo } from '@/components/shared/team-logo'
-
-
-type Team = {
-  id: string;
-  name: string;
-  division: string | null;
-  season: string | null;
-  team_color: string | null;
-  logo_url: string | null;
-  created_at: string;
-  updated_at: string;
-  coach_teams: Array<{
-    role: string;
-    users: {
-      email: string;
-      user_metadata: {
-        full_name?: string;
-      };
-    };
-  }>;
-}
+import type { Team } from './types'
 
 interface TeamPageContentProps {
   teamId: string;
@@ -49,70 +28,80 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
   const [team, setTeam] = useState<Team>(initialTeam)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('roster')
+
+  const loadTeam = async () => {
+    setLoading(true)
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        router.push('/login')
+        return
+      }
+
+      const { data: teamData, error: teamError } = await supabase
+        .from('teams')
+        .select(`
+          *,
+          coach_teams!inner (
+            id,
+            team_id,
+            role
+          )
+        `)
+        .eq('id', teamId)
+        .eq('coach_teams.coach_id', user.id)
+        .single()
+
+      if (teamError) {
+        console.error('Error fetching team:', teamError)
+        setError('Unable to load team data')
+        return
+      }
+
+      if (!teamData) {
+        setError('Team not found')
+        return
+      }
+
+      // Transform the data to include user information
+      const transformedTeam: Team = {
+        ...teamData,
+        coach_teams: teamData.coach_teams.map(ct => ({
+          id: ct.id,
+          team_id: ct.team_id,
+          role: ct.role,
+          users: {
+            email: user.email || '',
+            user_metadata: {
+              full_name: user.user_metadata?.full_name
+            }
+          }
+        }))
+      }
+
+      setTeam(transformedTeam)
+    } catch (err) {
+      console.error('Error in loadTeam:', err)
+      setError('An unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle team updates without full reload
+  const handleTeamUpdate = (updates: Partial<Team>) => {
+    setTeam(current => ({
+      ...current,
+      ...updates
+    }))
+  }
 
   useEffect(() => {
-    async function loadTeam() {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError || !user) {
-          router.push('/login')
-          return
-        }
+    loadTeam()
+  }, [teamId])
 
-        const { data: teamData, error: teamError } = await supabase
-          .from('teams')
-          .select(`
-            *,
-            coach_teams (
-              role,
-              coach_id
-            )
-          `)
-          .eq('id', teamId)
-          .single()
-
-        if (teamError) {
-          console.error('Error fetching team:', teamError)
-          setError('Unable to load team data')
-          return
-        }
-
-        if (!teamData) {
-          setError('Team not found')
-          return
-        }
-
-        // Transform the data to match the Team type
-        const transformedData = {
-          ...teamData,
-          coach_teams: teamData.coach_teams.map(ct => ({
-            role: ct.role,
-            users: {
-              email: user.email || '',
-              user_metadata: {
-                full_name: user.user_metadata?.full_name
-              }
-            }
-          }))
-        }
-
-        setTeam(transformedData as Team)
-      } catch (err) {
-        console.error('Error in loadTeam:', err)
-        setError('An unexpected error occurred')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Only reload if needed
-    if (!team) {
-      setLoading(true)
-      loadTeam()
-    }
-  }, [teamId, supabase, router, team])
-
-  if (loading) {
+  if (loading && !team) { // Only show loading state on initial load
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -142,7 +131,11 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
         </div>
       </div>
 
-      <Tabs defaultValue="roster" className="space-y-4">
+      <Tabs 
+        value={activeTab} 
+        onValueChange={setActiveTab} 
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="roster">Roster</TabsTrigger>
           <TabsTrigger value="games">Games</TabsTrigger>
@@ -170,36 +163,15 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
         </TabsContent>
 
         <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {team.team_color && (
-                  <div className="flex items-center gap-2">
-                    <span>Team Color:</span>
-                    <div 
-                      className="w-6 h-6 rounded border"
-                      style={{ backgroundColor: team.team_color }}
-                    />
-                  </div>
-                )}
-                {team.logo_url && (
-                  <div>
-                    <span>Team Logo:</span>
-                    <div className="mt-2">
-                      <TeamLogo 
-                        logoUrl={team.logo_url} 
-                        teamName={team.name}
-                        size="lg"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <TeamSettings 
+            teamId={team.id}
+            teamName={team.name}
+            teamColor={team.team_color}
+            logoUrl={team.logo_url}
+            division={team.division}
+            season={team.season}
+            onUpdate={handleTeamUpdate}
+          />
         </TabsContent>
       </Tabs>
     </div>
