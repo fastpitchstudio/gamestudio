@@ -1,9 +1,9 @@
 // src/components/shared/team-logo.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ImageOff } from 'lucide-react';
-import { getSignedUrl } from '@/lib/supabase/storage';
+import { logoCacheService } from '@/lib/cache/logo-cache';
 
 interface TeamLogoProps {
   logoUrl: string | null;
@@ -23,60 +23,49 @@ export function TeamLogo({ logoUrl, teamName, size = 'sm' }: TeamLogoProps) {
   const [loading, setLoading] = useState(true);
   const dimension = sizes[size];
 
+  const fetchSignedUrl = useCallback(async () => {
+    if (!logoUrl) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const url = await logoCacheService.getSignedUrl(logoUrl);
+      if (url) {
+        setSignedUrl(url);
+        setError(false);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error('Error fetching signed URL:', err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [logoUrl]);
+
   useEffect(() => {
     let mounted = true;
     
-    async function fetchSignedUrl() {
-      if (!logoUrl) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const url = await getSignedUrl(logoUrl);
-        
-        if (mounted) {
-          if (url) {
-            setSignedUrl(url);
-            setError(false);
-          } else {
-            setError(true);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching signed URL:', err);
-        if (mounted) {
-          setError(true);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
+    if (mounted) {
+      setLoading(true);
+      setError(false);
+      fetchSignedUrl();
     }
-
-    setLoading(true);
-    setError(false);
-    fetchSignedUrl();
 
     return () => {
       mounted = false;
     };
-  }, [logoUrl]);
+  }, [fetchSignedUrl]);
 
+  // Refresh URL before expiration
   useEffect(() => {
-    if (!signedUrl || !logoUrl) return;
+    if (!logoUrl || !signedUrl) return;
 
-    const timer = setInterval(() => {
-      getSignedUrl(logoUrl).then(url => {
-        if (url) {
-          setSignedUrl(url);
-        }
-      });
-    }, 45 * 60 * 1000);
-
+    const timer = setInterval(fetchSignedUrl, 40 * 60 * 1000); // Refresh 5 minutes before expiration
     return () => clearInterval(timer);
-  }, [logoUrl, signedUrl]);
+  }, [logoUrl, signedUrl, fetchSignedUrl]);
 
   if (loading) {
     return (
