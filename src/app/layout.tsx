@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import { DebugAuth } from '@/components/debug-auth'
 import { DebugSupabase } from '@/components/debug-supabase'
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,6 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
+      <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
         <Providers>
           {children}
           {process.env.NODE_ENV === 'development' && (
@@ -40,6 +47,8 @@ export default function RootLayout({
             </>
           )}
         </Providers>
+      </ThemeProvider>
+
       </body>
     </html>
   )
