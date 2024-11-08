@@ -1,3 +1,5 @@
+//src/app/teams/[id]/team-page-content.tsx
+
 'use client'
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
