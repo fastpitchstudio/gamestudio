@@ -1,6 +1,6 @@
 // src/app/layout.tsx
 import '@/app/globals.css'
-import { Inter } from 'next/font/google'
+//import { Inter } from 'next/font/google'
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata = {

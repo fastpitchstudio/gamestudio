@@ -2,7 +2,7 @@
 import React from 'react'
 import { getInitialTeam } from '../actions'
 import { TeamSettings } from '@/components/shared/team-settings'
-import type { Team } from '@/lib/types'
+//import type { Team } from '@/lib/types'
 
 /***********************
 // Next.js 15+ Dynamic Route Params Handling

@@ -90,12 +90,12 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
   }
 
   // Handle team updates without full reload
-  const handleTeamUpdate = (updates: Partial<Team>) => {
-    setTeam(current => ({
-      ...current,
-      ...updates
-    }))
-  }
+  //const handleTeamUpdate = (updates: Partial<Team>) => {
+  //  setTeam(current => ({
+  //     ...current,
+  //    ...updates
+  //  }))
+  //}
 
   useEffect(() => {
     loadTeam()

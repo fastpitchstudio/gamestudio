@@ -52,6 +52,8 @@ export function TeamSettings({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      console.log('selectedFile:', selectedFile)
+      console.log('file:', file)
       setSelectedFile(file)
       handleUpdateLogo(file)
     }
