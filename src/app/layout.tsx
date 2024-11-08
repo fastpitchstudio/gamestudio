@@ -1,11 +1,7 @@
+// src/app/layout.tsx
 import '@/app/globals.css'
 import { Inter } from 'next/font/google'
-import { Providers } from '@/components/providers'
-import { DebugAuth } from '@/components/debug-auth'
-import { DebugSupabase } from '@/components/debug-supabase'
 import { ThemeProvider } from "@/components/theme-provider"
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   metadataBase: new URL('https://gamestudio.one'),
@@ -24,31 +20,28 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
-      <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-        <Providers>
-          {children}
-          {process.env.NODE_ENV === 'development' && (
-            <>
-              <DebugAuth />
-              <DebugSupabase />
-            </>
-          )}
-        </Providers>
-      </ThemeProvider>
-
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="h-screen flex dark:bg-slate-950">
+            <div className="flex-1 flex flex-col">
+              <main className="flex-1 overflow-y-auto">
+                {children}
+              </main>
+            </div>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )

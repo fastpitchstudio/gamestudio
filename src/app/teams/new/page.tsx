@@ -1,4 +1,4 @@
-import { CreateTeamForm } from '@/components/teams/create-team-form'
+import { CreateTeamForm } from '@/components/shared/create-team-form'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'

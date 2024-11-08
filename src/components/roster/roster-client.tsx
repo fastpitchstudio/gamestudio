@@ -303,13 +303,13 @@ const RosterSkeleton = () => {
   )
 }
 
-interface TeamRosterProps {
-    teamId: string;
-    teamName?: string;
-    coachName?: string;
-  }
-  
-  export default function TeamRoster({ teamId, teamName, coachName }: TeamRosterProps) {
+interface TeamRosterClientProps {
+  teamId: string;
+  teamName?: string;
+  coachName?: string;
+}
+
+export default function TeamRosterClient({ teamId, teamName, coachName }: TeamRosterClientProps) {
     const [isClient, setIsClient] = useState(false)
     const [players, setPlayers] = useState<Player[]>([])
     const [loading, setLoading] = useState(true)

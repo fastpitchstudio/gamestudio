@@ -6,9 +6,7 @@ import type {
   UpdateGame,
   GameLineup,
   GameHighlight,
-  Player,
-  QueryResult,
-  QueryArrayResult
+  Player
 } from '@/lib/types'
 
 // Interface for game with all relations
@@ -25,7 +23,7 @@ interface LineupWithPlayer extends GameLineup {
 /**
  * Get a single game with all related data
  */
-export async function getGame(gameId: string): QueryResult<GameWithRelations> {
+export async function getGame(gameId: string): Promise<GameWithRelations> {
   const { data, error } = await supabase
     .from('games')
     .select(`
@@ -48,7 +46,7 @@ export async function getGame(gameId: string): QueryResult<GameWithRelations> {
 /**
  * Get all games for a team
  */
-export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
+export async function getTeamGames(teamId: string): Promise<Game[]> {
   const { data, error } = await supabase
     .from('games')
     .select()
@@ -62,7 +60,7 @@ export async function getTeamGames(teamId: string): QueryArrayResult<Game> {
 /**
  * Create a new game
  */
-export async function createGame(game: InsertGame): QueryResult<Game> {
+export async function createGame(game: InsertGame): Promise<Game> {
   const { data, error } = await supabase
     .from('games')
     .insert(game)
@@ -81,7 +79,7 @@ export async function createGame(game: InsertGame): QueryResult<Game> {
 export async function createGameFromTemplate(
   templateGameId: string, 
   newGameData: Omit<InsertGame, 'id' | 'created_at' | 'updated_at'>
-): QueryResult<Game> {
+): Promise<Game> {
   const template = await getGame(templateGameId)
   
   // Create new game
@@ -114,7 +112,7 @@ export async function createGameFromTemplate(
 /**
  * Update an existing game
  */
-export async function updateGame(gameId: string, updates: UpdateGame): QueryResult<Game> {
+export async function updateGame(gameId: string, updates: UpdateGame): Promise<Game> {
   const { data, error } = await supabase
     .from('games')
     .update(updates)

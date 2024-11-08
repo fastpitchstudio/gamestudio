@@ -3,8 +3,8 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import TeamRoster from '@/components/roster/roster-list'
-import { TeamSettings } from '@/components/teams/team-settings'
+import TeamRoster from '@/components/roster/roster-client'
+import { TeamSettings } from '@/components/shared/team-settings'
 import {
   Card,
   CardContent,
@@ -170,7 +170,6 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
             logoUrl={team.logo_url}
             division={team.division}
             season={team.season}
-            onUpdate={handleTeamUpdate}
           />
         </TabsContent>
       </Tabs>

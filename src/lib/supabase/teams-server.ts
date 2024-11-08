@@ -7,7 +7,7 @@ export async function getCoachTeams(userId: string) {
   const cookieStore = cookies()
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore
-  })
+  })  
 
   const { data: teams, error } = await supabase
     .from('teams')

@@ -1,6 +1,6 @@
-// src/components/teams/team-settings.tsx
 'use client'
 
+// src/components/shared/team-settings.tsx
 import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { 
@@ -21,16 +21,14 @@ import { Loader2, Upload, X } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import type { Database } from '@/lib/types/database-types'
-import type { Team } from '@/app/dashboard/teams/[id]/types'
 
 interface TeamSettingsProps {
-  teamId: string
-  teamName: string
-  teamColor: string | null
-  logoUrl: string | null
-  division: string | null
-  season: string | null
-  onUpdate: (updates: Partial<Team>) => void
+  teamId: string;
+  teamName: string;
+  teamColor: string | null;
+  logoUrl: string | null;
+  division: string | null;
+  season: string | null;
 }
 
 export function TeamSettings({ 
@@ -40,7 +38,6 @@ export function TeamSettings({
   logoUrl: initialLogoUrl,
   division: initialDivision,
   season: initialSeason,
-  onUpdate 
 }: TeamSettingsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -55,7 +52,6 @@ export function TeamSettings({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      selectedFile
       setSelectedFile(file)
       handleUpdateLogo(file)
     }
@@ -73,11 +69,9 @@ export function TeamSettings({
 
       if (error) throw error
 
-      // Clear logo cache and update local state
       logoCacheService.clearCache()
       setLogoUrl(null)
       setSelectedFile(null)
-      onUpdate({ logo_url: null })
     } catch (err) {
       console.error('Error removing logo:', err)
       setError('Failed to remove logo')
@@ -101,10 +95,8 @@ export function TeamSettings({
 
         if (error) throw error
 
-        // Clear logo cache and update local state
         logoCacheService.clearCache()
         setLogoUrl(newLogoUrl)
-        onUpdate({ logo_url: newLogoUrl })
       }
     } catch (err) {
       console.error('Error updating logo:', err)
@@ -132,8 +124,6 @@ export function TeamSettings({
         .eq('id', teamId)
 
       if (error) throw error
-
-      onUpdate(updates)
     } catch (err) {
       console.error('Error updating team info:', err)
       setError('Failed to update team information')
@@ -153,8 +143,6 @@ export function TeamSettings({
         .eq('id', teamId)
 
       if (error) throw error
-
-      onUpdate({ team_color: selectedColor })
     } catch (err) {
       console.error('Error updating team color:', err)
       setError('Failed to update team color')
@@ -197,7 +185,7 @@ export function TeamSettings({
               id="division"
               value={division}
               onChange={(e) => setDivision(e.target.value)}
-              placeholder={division ? undefined : "e.g., 12U, 14U, 16U"}
+              placeholder="e.g., 12U, 14U, 16U"
               className="max-w-md"
             />
           </div>
@@ -208,7 +196,7 @@ export function TeamSettings({
               id="season"
               value={season}
               onChange={(e) => setSeason(e.target.value)}
-              placeholder={season ? undefined : "e.g., Spring 2024"}
+              placeholder="e.g., Spring 2024"
               className="max-w-md"
             />
           </div>
