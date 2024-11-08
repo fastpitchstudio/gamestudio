@@ -1,3 +1,4 @@
+// src/components/shared/team-selector.tsx
 'use client'
 
 import React from 'react'
@@ -14,10 +15,16 @@ import { TeamLogo } from '@/components/shared/team-logo'
 import { ChevronDown, Plus } from 'lucide-react'
 import type { Database } from '@/lib/types/database-types'
 
+type TeamWithRole = Database['public']['Tables']['teams']['Row'] & {
+  coach_teams: Array<{
+    role: string;
+  }>;
+};
+
 interface TeamSelectorProps {
-  currentTeamId: string
-  currentTeamName: string
-  currentTeamLogo?: string | null
+  currentTeamId: string;
+  currentTeamName: string;
+  currentTeamLogo?: string | null;
 }
 
 export function TeamSelector({ 
@@ -25,7 +32,7 @@ export function TeamSelector({
   currentTeamName,
   currentTeamLogo 
 }: TeamSelectorProps) {
-  const [teams, setTeams] = React.useState<any[]>([])
+  const [teams, setTeams] = React.useState<TeamWithRole[]>([])
   const [loading, setLoading] = React.useState(true)
   const supabase = createClientComponentClient<Database>()
   const router = useRouter()
@@ -48,7 +55,7 @@ export function TeamSelector({
           .order('name')
 
         if (teams) {
-          setTeams(teams)
+          setTeams(teams as TeamWithRole[])
         }
       } catch (error) {
         console.error('Error loading teams:', error)
