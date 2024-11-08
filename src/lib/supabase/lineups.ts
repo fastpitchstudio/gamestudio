@@ -5,8 +5,6 @@ import type {
   InsertGameLineup, 
   UpdateGameLineup,
   Player,
-  QueryResult,
-  QueryArrayResult
 } from '@/lib/types'
 
 // Interface for lineup with player data
@@ -17,7 +15,7 @@ interface LineupWithPlayer extends GameLineup {
 /**
  * Get full lineup for a game with player details
  */
-export async function getGameLineup(gameId: string): QueryArrayResult<LineupWithPlayer> {
+export async function getGameLineup(gameId: string): Promise<LineupWithPlayer[]> {
   const { data, error } = await supabase
     .from('game_lineups')
     .select(`
@@ -38,7 +36,7 @@ export async function getGameLineup(gameId: string): QueryArrayResult<LineupWith
 export async function getInningLineup(
   gameId: string, 
   inning: number
-): QueryArrayResult<LineupWithPlayer> {
+): Promise<LineupWithPlayer[]> {
   const { data, error } = await supabase
     .from('game_lineups')
     .select(`
@@ -56,7 +54,7 @@ export async function getInningLineup(
 /**
  * Update or create multiple lineup entries
  */
-export async function updateLineup(lineup: InsertGameLineup[]): QueryArrayResult<GameLineup> {
+export async function updateLineup(lineup: InsertGameLineup[]): Promise<GameLineup[]> {
   const { data, error } = await supabase
     .from('game_lineups')
     .upsert(lineup, {
@@ -78,7 +76,7 @@ export async function updateLineupPosition(
   playerId: string,
   inning: number,
   updates: UpdateGameLineup
-): QueryResult<GameLineup> {
+): Promise<GameLineup> {
   const { data, error } = await supabase
     .from('game_lineups')
     .update(updates)
@@ -119,7 +117,7 @@ export async function copyInningLineup(
   gameId: string,
   fromInning: number,
   toInning: number
-): QueryArrayResult<GameLineup> {
+): Promise<GameLineup[]> {
   const sourceLineup = await getInningLineup(gameId, fromInning)
   
   const newLineup: InsertGameLineup[] = sourceLineup.map(entry => ({

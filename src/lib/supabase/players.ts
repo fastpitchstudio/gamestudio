@@ -5,8 +5,6 @@ import type {
   Position,
   InsertPlayer, 
   UpdatePlayer,
-  QueryResult,
-  QueryArrayResult
 } from '@/lib/types'
 
 interface PlayerWithPosition extends Player {
@@ -22,7 +20,7 @@ interface PlayerStats {
 /**
  * Get all players for a team
  */
-export async function getTeamPlayers(teamId: string): QueryArrayResult<PlayerWithPosition> {
+export async function getTeamPlayers(teamId: string): Promise<PlayerWithPosition[]> {
   const { data, error } = await supabase
     .from('players')
     .select(`
@@ -40,7 +38,7 @@ export async function getTeamPlayers(teamId: string): QueryArrayResult<PlayerWit
 /**
  * Get a single player
  */
-export async function getPlayer(playerId: string): QueryResult<PlayerWithPosition> {
+export async function getPlayer(playerId: string): Promise<PlayerWithPosition> {
   const { data, error } = await supabase
     .from('players')
     .select(`
@@ -59,7 +57,7 @@ export async function getPlayer(playerId: string): QueryResult<PlayerWithPositio
 /**
  * Create a new player
  */
-export async function createPlayer(player: InsertPlayer): QueryResult<Player> {
+export async function createPlayer(player: InsertPlayer): Promise<Player> {
   const { data, error } = await supabase
     .from('players')
     .insert(player)
@@ -78,7 +76,7 @@ export async function createPlayer(player: InsertPlayer): QueryResult<Player> {
 export async function updatePlayer(
   playerId: string, 
   updates: UpdatePlayer
-): QueryResult<Player> {
+): Promise<Player> {
   const { data, error } = await supabase
     .from('players')
     .update(updates)
@@ -107,7 +105,7 @@ export async function deactivatePlayer(playerId: string): Promise<void> {
 /**
  * Get player statistics
  */
-export async function getPlayerStats(playerId: string): QueryResult<PlayerStats> {
+export async function getPlayerStats(playerId: string): Promise<PlayerStats> {
   const { data: gameLineups, error } = await supabase
     .from('game_lineups')
     .select(`
