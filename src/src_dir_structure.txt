@@ -1,6 +1,7 @@
 ├──📁 src
 │	├──📄 .DS_Store
 │	├──📄 middleware.ts
+│	├──📄 src_dir_structure.txt
 │	├──📁 lib
 │	│	├──📄 .DS_Store
 │	│	├──📄 utils.ts
@@ -52,18 +53,17 @@
 │	│	│	├──📄 table.tsx
 │	│	│	├──📄 tabs.tsx
 │	│	│	├──📄 tooltip.tsx
-│	│	├──📁 teams
-│	│	│	├──📄 .DS_Store
-│	│	│	├──📄 create-team-form.tsx
-│	│	│	├──📄 team-settings.tsx
 │	│	├──📁 shared
+│	│	│	├──📄 create-team-form.tsx
 │	│	│	├──📄 side-nav.tsx
 │	│	│	├──📄 team-color-picker.tsx
 │	│	│	├──📄 team-logo.tsx
+│	│	│	├──📄 team-selector.tsx
+│	│	│	├──📄 team-settings.tsx
 │	│	│	├──📄 top-nav.tsx
 │	│	├──📁 roster
 │	│	│	├──📄 player-details-modal.tsx
-│	│	│	├──📄 roster-list.tsx
+│	│	│	├──📄 roster-client.tsx
 │	│	├──📁 layout
 │	│	├──📁 game
 │	│	│	├──📄 .DS_Store
