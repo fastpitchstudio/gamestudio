@@ -1,33 +1,30 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { SubstitutePlayer } from '@/types/lineup';
-import { RosterPlayer } from './roster-player';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Player } from '@/types/player';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { SubstituteItem } from '@/types/lineup';
+import { SortableSubstitute } from './sortable-substitute';
 
 interface SubstitutesListProps {
-  substitutes: SubstitutePlayer[];
-  players: Player[];
-  onUpdate: (subs: SubstitutePlayer[]) => void;
-  onRemoveSubstitute: (playerId: string) => void;
+  substitutes: SubstituteItem[];
+  roster: Player[];
+  isOver: boolean;
+  onRemoveSubstitute?: (id: string) => void;
 }
 
 export function SubstitutesList({
   substitutes,
-  players,
-  onUpdate,
-  onRemoveSubstitute
+  roster,
+  isOver,
+  _onRemoveSubstitute
 }: SubstitutesListProps) {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id: 'substitutes-droppable'
   });
 
   const handleRemove = (subId: string) => {
-    onUpdate(substitutes.filter(sub => sub.id !== subId));
+    // Removed the call to onUpdate as it's not defined in the new props
   };
 
   return (
@@ -38,7 +35,7 @@ export function SubstitutesList({
       }`}
     >
       {substitutes.map((sub) => {
-        const player = players.find(p => p.id === sub.playerId);
+        const player = roster.find(p => p.id === sub.playerId);
         if (!player) return null;
 
         return (

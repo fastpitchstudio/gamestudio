@@ -8,12 +8,10 @@ import { CSS } from '@dnd-kit/utilities';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { Player } from '@/lib/types';
 
-import type { LineupSlot } from '@/lib/types/lineup';
-
 interface LineupBuilderProps {
   players: Player[];
-  initialLineup?: LineupSlot[];
-  onLineupChange: (lineup: LineupSlot[]) => void;
+  initialLineup?: any[];
+  onLineupChange: (lineup: any[]) => void;
 }
 
 interface RosterViewProps {

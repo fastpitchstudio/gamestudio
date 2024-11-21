@@ -101,7 +101,7 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
 
   useEffect(() => {
     loadTeam()
-  }, [teamId])
+  }, [loadTeam, teamId])
 
   if (loading && !team) { // Only show loading state on initial load
     return (

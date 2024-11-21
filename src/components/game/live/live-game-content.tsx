@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LineupBuilder } from '@/components/game/lineup-v2/lineup-builder';
 import RosterView from '@/components/game/roster/roster-view';

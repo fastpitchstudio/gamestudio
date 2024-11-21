@@ -164,7 +164,7 @@ export const useLineupManager = ({
     }
     
     debouncedSave({ lineup: newLineup });
-  }, [gameId, debouncedSave]);
+  }, () => [gameId, debouncedSave]);
 
   const updateSubstitutes = useCallback((newSubstitutes: SubstitutePlayer[]) => {
     console.log('Updating substitutes:', newSubstitutes);
@@ -178,7 +178,7 @@ export const useLineupManager = ({
     }
     
     debouncedSave({ substitutes: newSubstitutes });
-  }, [gameId, debouncedSave]);
+  }, () => [gameId, debouncedSave]);
 
   const updatePlayerAvailability = useCallback((newAvailability: PlayerAvailability[]) => {
     console.log('Updating player availability:', newAvailability);
@@ -192,7 +192,7 @@ export const useLineupManager = ({
     }
     
     debouncedSave({ availability: newAvailability });
-  }, [gameId, debouncedSave]);
+  }, () => [gameId, debouncedSave]);
 
   const loadGameState = useCallback(async () => {
     try {

@@ -73,7 +73,7 @@ const AuthDebug = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
 
   return (
     <Card className="w-full max-w-2xl mx-auto my-4">

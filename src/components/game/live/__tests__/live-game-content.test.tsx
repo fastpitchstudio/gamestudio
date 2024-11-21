@@ -43,7 +43,16 @@ const mockGame = {
 };
 
 describe('LiveGameContent', () => {
-  let mockSupabase: any;
+  let mockSupabase: {
+    from: jest.Mock;
+    delete: jest.Mock;
+    eq: jest.Mock;
+    insert: jest.Mock;
+    select: jest.Mock;
+    execute: jest.Mock;
+    data: unknown;
+    error: null | Error;
+  };
 
   beforeEach(() => {
     // Setup mock Supabase client

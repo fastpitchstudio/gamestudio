@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ImageOff } from 'lucide-react';
+import Image from 'next/image';
 import { logoCacheService } from '@/lib/cache/logo-cache';
 
 interface TeamLogoProps {
@@ -94,9 +95,11 @@ export function TeamLogo({ logoUrl, teamName, size = 'sm' }: TeamLogoProps) {
       className="relative rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800" 
       style={{ width: dimension, height: dimension }}
     >
-      <img
+      <Image
         src={signedUrl}
         alt={`${teamName} logo`}
+        width={dimension}
+        height={dimension}
         className="w-full h-full object-cover"
         onError={() => setError(true)}
       />

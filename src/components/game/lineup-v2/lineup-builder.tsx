@@ -2,10 +2,10 @@
 
 import {
   DndContext,
+  closestCenter,
+  DragStartEvent,
   DragEndEvent,
   DragOverEvent,
-  DragStartEvent,
-  closestCenter,
   useSensor,
   useSensors,
   PointerSensor,
@@ -20,31 +20,11 @@ import { cn } from '@/lib/utils';
 import { Player } from '@/types/player';
 import { useState, useMemo } from 'react';
 import { RosterPlayer } from './roster-player';
-import { Position, toPosition, isValidPosition } from '@/types/lineup';
+import { Position, toPosition, STANDARD_POSITIONS } from '@/types/lineup';
 import { SubstitutePlayer } from '@/types/lineup';
 import { useLineupManager } from '@/hooks/use-lineup-manager';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DroppableLineup } from './droppable-lineup';
-
-const POSITIONS = [
-  'Forward',
-  'Midfielder',
-  'Defender',
-  'Goalkeeper'
-] as const;
-
-const STANDARD_POSITIONS = [
-  'P',
-  'C',
-  '1B',
-  '2B',
-  '3B',
-  'SS',
-  'LF',
-  'CF',
-  'RF',
-  'DH'
-] as const;
 
 interface SortableSubstituteProps {
   substitute: SubstitutePlayer;

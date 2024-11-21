@@ -2,7 +2,7 @@
 import { Suspense } from 'react'
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { TopNav } from '@/components/shared/top-nav'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Database } from '@/lib/types/database-types'

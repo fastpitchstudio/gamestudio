@@ -3,9 +3,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Player } from '@/types/player';
 import { Position } from '@/types/lineup';
 import { cn } from '@/lib/utils';
-import { GripVerticalIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const STANDARD_POSITIONS = [
   'P',

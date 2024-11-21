@@ -8,10 +8,9 @@ import LiveGameContent from '@/components/game/live/live-game-content'
 import type { Database } from '@/lib/types/database-types'
 import type { Game } from '@/lib/types/supabase'
 
-type Params = { id: string };
-
-interface SearchParams {
-  game?: string;
+interface Props {
+  params: { id: string };
+  searchParams: { game?: string };
 }
 
 export interface GameWithLineups extends Game {
@@ -21,10 +20,7 @@ export interface GameWithLineups extends Game {
 export default async function TeamLivePage({ 
   params,
   searchParams 
-}: { 
-  params: { id: string };
-  searchParams: { game?: string };
-}) {
+}: Props) {
   const cookieStore = await cookies();
   const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore });
 
