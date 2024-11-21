@@ -357,7 +357,7 @@ export function LineupBuilder({
             onRemove={(id) => {
               updateLineup(lineup.filter(slot => slot.id !== id));
             }}
-            onReorder={(newLineup) => {
+            _onReorder={(newLineup) => {
               updateLineup(newLineup);
             }}
             isOver={overId === 'lineup'}
