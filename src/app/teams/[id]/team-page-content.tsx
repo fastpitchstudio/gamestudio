@@ -3,7 +3,7 @@
 'use client'
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import TeamRoster from '@/components/roster/roster-client'
 import { TeamSettings } from '@/components/shared/team-settings'
@@ -32,7 +32,7 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('roster')
 
-  const loadTeam = async () => {
+  const loadTeam = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -89,19 +89,11 @@ export default function TeamPageContent({ teamId, initialTeam }: TeamPageContent
     } finally {
       setLoading(false)
     }
-  }
-
-  // Handle team updates without full reload
-  //const handleTeamUpdate = (updates: Partial<Team>) => {
-  //  setTeam(current => ({
-  //     ...current,
-  //    ...updates
-  //  }))
-  //}
+  }, [teamId, supabase, router])
 
   useEffect(() => {
     loadTeam()
-  }, [loadTeam, teamId])
+  }, [loadTeam])
 
   if (loading && !team) { // Only show loading state on initial load
     return (

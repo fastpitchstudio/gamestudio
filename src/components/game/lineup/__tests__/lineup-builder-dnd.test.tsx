@@ -1,6 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
-import LineupBuilder from '../lineup-builder';
 
 // Mock data
 const mockPlayers = [

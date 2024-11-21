@@ -46,75 +46,6 @@ export const useLineupManager = ({
     }
   }, [teamId]);
 
-  const loadGameState = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Load roster
-      const { data: rosterData, error: rosterError } = await supabase
-        .from('players')
-        .select('*')
-        .eq('team_id', teamId)
-        .order('number');
-
-      if (rosterError) throw rosterError;
-
-      const players = rosterData.map(player => transformPlayerFromSchema(player));
-      console.log('Loaded roster:', players);
-      setRoster(players);
-
-      // For new games, we don't need to load anything else
-      if (gameId === 'new') {
-        setIsLoading(false);
-        return;
-      }
-
-      // Load lineup and substitutes
-      const { data: lineupData, error: lineupError } = await supabase
-        .from('game_lineups')
-        .select('*')
-        .eq('game_id', gameId)
-        .eq('team_id', teamId)
-        .maybeSingle();
-
-      if (lineupError) throw lineupError;
-
-      if (lineupData) {
-        setLineup(lineupData.lineup || []);
-        setSubstitutes(lineupData.substitutes || []);
-      }
-
-      // Load player availability
-      const { data: availabilityData, error: availabilityError } = await supabase
-        .from('game_player_availability')
-        .select('*')
-        .eq('game_id', gameId);
-
-      if (availabilityError) throw availabilityError;
-
-      const availability = availabilityData.map(a => ({
-        playerId: a.player_id,
-        isAvailable: a.is_available,
-        notes: a.notes
-      }));
-
-      setAvailability(availability);
-      setHasPendingChanges(false);
-    } catch (error) {
-      console.error('Error loading game state:', error);
-      setError(error instanceof Error ? error : new Error('Failed to load game state'));
-      toast.error('Failed to load game state');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [gameId, teamId, supabase]);
-
-  // Load initial game state
-  useEffect(() => {
-    loadGameState();
-  }, [loadGameState, gameId, teamId]);
-
   // Create a debounced save function for auto-saving
   const debouncedSave = useCallback(
     debounce(async (data: { 
@@ -150,62 +81,40 @@ export const useLineupManager = ({
             team_id: teamId,
             lineup: data.lineup || lineup,
             substitutes: data.substitutes || substitutes,
+            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+          });
 
-        if (lineupError) {
-          const errorDetails = {
-            message: lineupError.message,
-            details: lineupError.details,
-            code: lineupError.code,
-            hint: lineupError.hint
-          };
-          console.error('Error saving lineup:', errorDetails);
-          throw new Error(JSON.stringify(errorDetails));
-        }
+        if (lineupError) throw lineupError;
 
         // Save player availability
         if (data.availability) {
-          const availabilityUpdates = data.availability.map(a => ({
-            game_id: gameId,
-            player_id: a.playerId,
-            is_available: a.isAvailable,
-            notes: a.notes || null,
-            updated_at: new Date().toISOString(),
-          }));
-
           const { error: availabilityError } = await supabase
             .from('game_player_availability')
-            .upsert(availabilityUpdates)
-            .select();
+            .upsert(
+              data.availability.map(a => ({
+                game_id: gameId,
+                player_id: a.playerId,
+                is_available: a.isAvailable,
+                notes: a.notes,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }))
+            );
 
-          if (availabilityError) {
-            const errorDetails = {
-              message: availabilityError.message,
-              details: availabilityError.details,
-              code: availabilityError.code,
-              hint: availabilityError.hint
-            };
-            console.error('Error saving availability:', errorDetails);
-            throw new Error(JSON.stringify(errorDetails));
-          }
+          if (availabilityError) throw availabilityError;
         }
-        
-        // Clear pending changes after successful save
-        pendingChanges.current.clear();
+
+        // Update local state
+        if (data.lineup) setLineup(data.lineup);
+        if (data.substitutes) setSubstitutes(data.substitutes);
+        if (data.availability) setAvailability(data.availability);
+
         setHasPendingChanges(false);
+        toast.success('Changes saved');
       } catch (error) {
-        console.error('Error saving lineup:', {
-          error,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          type: typeof error
-        });
-        toast.error('Failed to save lineup changes');
-        // Revert optimistic updates on error
-        loadGameState();
+        console.error('Error saving lineup:', error);
+        toast.error('Failed to save changes');
       } finally {
         setIsSaving(false);
       }
@@ -213,12 +122,73 @@ export const useLineupManager = ({
     [gameId, teamId, lineup, substitutes, autoSaveDelay, supabase]
   );
 
-  // Cancel any pending saves when unmounting
   useEffect(() => {
-    return () => {
-      debouncedSave.cancel();
+    const loadGameState = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Load roster
+        const { data: rosterData, error: rosterError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('team_id', teamId)
+          .order('number');
+
+        if (rosterError) throw rosterError;
+
+        const players = rosterData.map(player => transformPlayerFromSchema(player));
+        console.log('Loaded roster:', players);
+        setRoster(players);
+
+        // For new games, we don't need to load anything else
+        if (gameId === 'new') {
+          setIsLoading(false);
+          return;
+        }
+
+        // Load lineup and substitutes
+        const { data: lineupData, error: lineupError } = await supabase
+          .from('game_lineups')
+          .select('*')
+          .eq('game_id', gameId)
+          .eq('team_id', teamId)
+          .maybeSingle();
+
+        if (lineupError) throw lineupError;
+
+        if (lineupData) {
+          setLineup(lineupData.lineup || []);
+          setSubstitutes(lineupData.substitutes || []);
+        }
+
+        // Load player availability
+        const { data: availabilityData, error: availabilityError } = await supabase
+          .from('game_player_availability')
+          .select('*')
+          .eq('game_id', gameId);
+
+        if (availabilityError) throw availabilityError;
+
+        const availability = availabilityData.map(a => ({
+          playerId: a.player_id,
+          isAvailable: a.is_available,
+          notes: a.notes
+        }));
+
+        setAvailability(availability);
+        setHasPendingChanges(false);
+      } catch (error) {
+        console.error('Error loading game state:', error);
+        setError(error instanceof Error ? error : new Error('Failed to load game state'));
+        toast.error('Failed to load game state');
+      } finally {
+        setIsLoading(false);
+      }
     };
-  }, [debouncedSave]);
+
+    loadGameState();
+  }, [gameId, teamId, supabase]);
 
   // Update functions
   const updateLineup = useCallback((newLineup: LineupSlot[]) => {
@@ -294,6 +264,5 @@ export const useLineupManager = ({
     updateSubstitutes,
     updatePlayerAvailability,
     loadPreviousLineups,
-    loadGameState,
   };
 };
