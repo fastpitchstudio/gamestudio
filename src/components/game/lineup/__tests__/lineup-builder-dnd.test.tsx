@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import LineupBuilder from '../lineup-builder';
 
 // Mock data
 const mockPlayers = [

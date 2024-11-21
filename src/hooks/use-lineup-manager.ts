@@ -46,80 +46,82 @@ export const useLineupManager = ({
     }
   }, [teamId]);
 
-  // Create a debounced save function for auto-saving
-  const debouncedSave = useCallback(
-    debounce(async (data: { 
-      lineup?: LineupSlot[], 
-      substitutes?: SubstitutePlayer[], 
-      availability?: PlayerAvailability[] 
-    }) => {
-      try {
-        setIsSaving(true);
-        console.log('Saving lineup data:', {
-          gameId,
-          teamId,
-          lineupLength: data.lineup?.length || lineup.length,
-          subsLength: data.substitutes?.length || substitutes.length
-        });
+  const saveData = useCallback(async (data: { 
+    lineup?: LineupSlot[], 
+    substitutes?: SubstitutePlayer[], 
+    availability?: PlayerAvailability[] 
+  }) => {
+    try {
+      setIsSaving(true);
+      console.log('Saving lineup data:', {
+        gameId,
+        teamId,
+        lineupLength: data.lineup?.length || lineup.length,
+        subsLength: data.substitutes?.length || substitutes.length
+      });
 
-        // For new games, just update local state immediately
-        if (gameId === 'new') {
-          console.log('Updating local state for new game');
-          if (data.lineup) setLineup(data.lineup);
-          if (data.substitutes) setSubstitutes(data.substitutes);
-          if (data.availability) setAvailability(data.availability);
-          setHasPendingChanges(false);
-          setIsSaving(false);
-          return;
-        }
-
-        // Save lineup and substitutes
-        const { error: lineupError } = await supabase
-          .from('game_lineups')
-          .upsert({
-            game_id: gameId,
-            team_id: teamId,
-            lineup: data.lineup || lineup,
-            substitutes: data.substitutes || substitutes,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-
-        if (lineupError) throw lineupError;
-
-        // Save player availability
-        if (data.availability) {
-          const { error: availabilityError } = await supabase
-            .from('game_player_availability')
-            .upsert(
-              data.availability.map(a => ({
-                game_id: gameId,
-                player_id: a.playerId,
-                is_available: a.isAvailable,
-                notes: a.notes,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }))
-            );
-
-          if (availabilityError) throw availabilityError;
-        }
-
-        // Update local state
+      // For new games, just update local state immediately
+      if (gameId === 'new') {
+        console.log('Updating local state for new game');
         if (data.lineup) setLineup(data.lineup);
         if (data.substitutes) setSubstitutes(data.substitutes);
         if (data.availability) setAvailability(data.availability);
-
         setHasPendingChanges(false);
-        toast.success('Changes saved');
-      } catch (error) {
-        console.error('Error saving lineup:', error);
-        toast.error('Failed to save changes');
-      } finally {
         setIsSaving(false);
+        return;
       }
-    }, autoSaveDelay),
-    [gameId, teamId, lineup, substitutes, autoSaveDelay, supabase]
+
+      // Save lineup and substitutes
+      const { error: lineupError } = await supabase
+        .from('game_lineups')
+        .upsert({
+          game_id: gameId,
+          team_id: teamId,
+          lineup: data.lineup || lineup,
+          substitutes: data.substitutes || substitutes,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (lineupError) throw lineupError;
+
+      // Save player availability
+      if (data.availability) {
+        const { error: availabilityError } = await supabase
+          .from('game_player_availability')
+          .upsert(
+            data.availability.map(a => ({
+              game_id: gameId,
+              player_id: a.playerId,
+              is_available: a.isAvailable,
+              notes: a.notes,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }))
+          );
+
+        if (availabilityError) throw availabilityError;
+      }
+
+      // Update local state
+      if (data.lineup) setLineup(data.lineup);
+      if (data.substitutes) setSubstitutes(data.substitutes);
+      if (data.availability) setAvailability(data.availability);
+
+      setHasPendingChanges(false);
+      toast.success('Changes saved');
+    } catch (error) {
+      console.error('Error saving lineup:', error);
+      toast.error('Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [gameId, teamId, lineup, substitutes, supabase]);
+
+  // Create a debounced save function for auto-saving
+  const debouncedSave = useCallback(
+    debounce(saveData, autoSaveDelay),
+    [saveData, autoSaveDelay]
   );
 
   useEffect(() => {
