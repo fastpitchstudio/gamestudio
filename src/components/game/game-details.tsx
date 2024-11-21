@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineupBuilder } from './lineup-v2/lineup-builder';
 import { Loader2 } from 'lucide-react';
-import { Team } from '@/types/team';
+import type { Team } from '@/lib/types/team';
 
 interface GameDetailsProps {
   gameId: string;
