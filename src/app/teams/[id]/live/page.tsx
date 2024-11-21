@@ -8,11 +8,6 @@ import LiveGameContent from '@/components/game/live/live-game-content'
 import type { Database } from '@/lib/types/database-types'
 import type { Game } from '@/lib/types/supabase'
 
-interface Props {
-  params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
-
 export interface GameWithLineups extends Game {
   game_lineups?: Database['public']['Tables']['game_lineups']['Row'][];
 }
