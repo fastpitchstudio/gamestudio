@@ -20,7 +20,10 @@ export interface GameWithLineups extends Game {
 export default async function TeamLivePage({ 
   params,
   searchParams 
-}: Props) {
+}: {
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const cookieStore = await cookies();
   const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore });
 
