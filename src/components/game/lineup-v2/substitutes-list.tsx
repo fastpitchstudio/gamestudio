@@ -1,10 +1,10 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Player } from '@/types/player';
 import { SubstituteItem } from '@/types/lineup';
-import { SortableSubstitute } from './sortable-substitute';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface SubstitutesListProps {
   substitutes: SubstituteItem[];
@@ -23,7 +23,7 @@ export function SubstitutesList({
     id: 'substitutes-droppable'
   });
 
-  const handleRemove = (subId: string) => {
+  const handleRemove = (_subId: string) => {
     // Removed the call to onUpdate as it's not defined in the new props
   };
 

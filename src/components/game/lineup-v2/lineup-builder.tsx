@@ -3,7 +3,6 @@
 import {
   DndContext,
   closestCenter,
-  DragStartEvent,
   DragEndEvent,
   DragOverEvent,
   useSensor,
@@ -20,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { Player } from '@/types/player';
 import { useState, useMemo } from 'react';
 import { RosterPlayer } from './roster-player';
-import { Position, toPosition, STANDARD_POSITIONS } from '@/types/lineup';
+import { Position, toPosition } from '@/types/lineup';
 import { SubstitutePlayer } from '@/types/lineup';
 import { useLineupManager } from '@/hooks/use-lineup-manager';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -182,7 +181,7 @@ export function LineupBuilder({
     return 'roster';
   };
 
-const handleDragStart = (event: DragStartEvent) => {
+const handleDragStart = (event: any) => {
   setActiveId(event.active.id.toString());
 };
 
@@ -223,7 +222,7 @@ const handleDragStart = (event: DragStartEvent) => {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
     setActiveId(null);
     setOverId(null);

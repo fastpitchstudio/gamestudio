@@ -10,7 +10,6 @@ import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Player } from '@/types/player';
 import { Position, STANDARD_POSITIONS } from '@/types/lineup';
-import { SortableLineupPlayer } from './sortable-lineup-player';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -237,10 +236,8 @@ export function DroppableLineup({
   );
 }
 
-const arrayMove = (array: any[], from: number, to: number) => {
-  const newArray = [...array];
-  const item = newArray[from];
-  newArray.splice(from, 1);
-  newArray.splice(to, 0, item);
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const newArray = array.slice();
+  newArray.splice(to < 0 ? newArray.length + to : to, 0, newArray.splice(from, 1)[0]);
   return newArray;
-};
+}

@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { LineupBuilder } from '@/components/game/lineup-v2/lineup-builder';
 import RosterView from '@/components/game/roster/roster-view';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusCircle, Timer, FileDown, Pencil } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 import type { LineupSlot } from '@/types/lineup';
 import type { 
@@ -19,7 +19,6 @@ import type {
   Team,
   InsertGameLineup
 } from '@/lib/types/supabase';
-import { updateLineup } from '@/lib/supabase/lineups';
 import type { Database } from '@/lib/types/database-types';
 
 interface GameWithLineups extends Game {

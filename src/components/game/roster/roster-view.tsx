@@ -5,14 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { Player } from '@/lib/types';
-
-interface LineupBuilderProps {
-  players: Player[];
-  initialLineup?: any[];
-  onLineupChange: (lineup: any[]) => void;
-}
 
 interface RosterViewProps {
   players: Player[];
