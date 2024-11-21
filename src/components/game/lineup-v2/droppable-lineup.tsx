@@ -30,7 +30,7 @@ interface DroppableLineupProps {
   onReorder: (newLineup: LineupSlot[]) => void;
   isOver?: boolean;
   activeId?: string | null;
-  overId?: string | null;
+  overId: string | null;
   conflictingPositions?: Position[];
 }
 
@@ -159,7 +159,7 @@ export function DroppableLineup({
   roster,
   onPositionChange,
   onRemove,
-  _onReorder,
+  onReorder,
   isOver,
   activeId,
   overId,
