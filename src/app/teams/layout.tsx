@@ -35,7 +35,7 @@ export default async function Layout({
   }
 
   // Check if we're on the teams index page
-  const headersList = headers()
+  const headersList = await headers()
   const pathname = headersList.get('next-url') || ''
   const isTeamsIndexPage = pathname === '/teams'
 
