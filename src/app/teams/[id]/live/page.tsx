@@ -10,7 +10,7 @@ import type { Game } from '@/lib/types/supabase'
 
 interface Props {
   params: { id: string };
-  searchParams: { game?: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 export interface GameWithLineups extends Game {

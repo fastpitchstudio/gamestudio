@@ -120,7 +120,7 @@ export const useLineupManager = ({
 
   // Create a debounced save function for auto-saving
   const debouncedSave = useCallback(
-    debounce(saveData, autoSaveDelay),
+    () => debounce(() => saveData(), autoSaveDelay),
     [saveData, autoSaveDelay]
   );
 
@@ -204,7 +204,7 @@ export const useLineupManager = ({
       return;
     }
     
-    debouncedSave({ lineup: newLineup });
+    debouncedSave();
   }, [gameId, debouncedSave, setLineup, setHasPendingChanges]);
 
   const updateSubstitutes = useCallback((newSubstitutes: SubstitutePlayer[]) => {
@@ -218,7 +218,7 @@ export const useLineupManager = ({
       return;
     }
     
-    debouncedSave({ substitutes: newSubstitutes });
+    debouncedSave();
   }, [gameId, debouncedSave, setSubstitutes, setHasPendingChanges]);
 
   const updatePlayerAvailability = useCallback((newAvailability: PlayerAvailability[]) => {
@@ -232,7 +232,7 @@ export const useLineupManager = ({
       return;
     }
     
-    debouncedSave({ availability: newAvailability });
+    debouncedSave();
   }, [gameId, debouncedSave, setAvailability, setHasPendingChanges]);
 
   const loadPreviousLineups = useCallback(async () => {
