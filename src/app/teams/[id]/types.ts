@@ -1,8 +1,6 @@
 import type { Database } from '@/lib/types/database-types'
 
-type BaseTeam = Database['public']['Tables']['teams']['Row']
-
-export type Team = BaseTeam & {
+export interface Team extends Database['public']['Tables']['teams']['Row'] {
   coach_teams: Array<{
     id: string;
     team_id: string;
@@ -14,7 +12,8 @@ export type Team = BaseTeam & {
       };
     };
   }>;
-};
+  players?: Array<Database['public']['Tables']['players']['Row']>;
+}
 
 // For backwards compatibility
 export type TeamWithCoach = Team;

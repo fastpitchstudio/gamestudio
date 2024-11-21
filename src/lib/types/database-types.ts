@@ -92,6 +92,7 @@ export interface Database {
           preferred_positions: string[] | null
           notes: string | null
           active: boolean
+          available: boolean
           created_at: string
           updated_at: string
         }
@@ -118,6 +119,7 @@ export interface Database {
           preferred_positions?: string[] | null
           notes?: string | null
           active?: boolean
+          available?: boolean  // Optional in Insert since it has a default
           created_at?: string
           updated_at?: string
         }
@@ -144,6 +146,7 @@ export interface Database {
           preferred_positions?: string[] | null
           notes?: string | null
           active?: boolean
+          available?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -318,10 +321,41 @@ export interface Database {
         Row: {
           id: string
           game_id: string
+          team_id: string
+          lineup: Json
+          substitutes: Json
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          team_id: string
+          lineup?: Json
+          substitutes?: Json
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          team_id?: string
+          lineup?: Json
+          substitutes?: Json
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      game_player_availability: {
+        Row: {
+          id: string
+          game_id: string
           player_id: string
-          batting_order: number | null
-          position: string | null
-          inning: number | null
+          is_available: boolean
+          notes: string | null
           created_at: string
           updated_at: string
         }
@@ -329,9 +363,8 @@ export interface Database {
           id?: string
           game_id: string
           player_id: string
-          batting_order?: number | null
-          position?: string | null
-          inning?: number | null
+          is_available?: boolean
+          notes?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -339,9 +372,8 @@ export interface Database {
           id?: string
           game_id?: string
           player_id?: string
-          batting_order?: number | null
-          position?: string | null
-          inning?: number | null
+          is_available?: boolean
+          notes?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -384,4 +416,3 @@ export interface Database {
     }
   }
 }
-

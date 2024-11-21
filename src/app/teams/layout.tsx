@@ -14,7 +14,7 @@ interface TeamsLayoutProps {
 export default async function Layout({ 
   children 
 }: TeamsLayoutProps) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore
   })
@@ -26,7 +26,7 @@ export default async function Layout({
 
   const handleSignOut = async () => {
     'use server'
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerComponentClient({ cookies: () => cookieStore })
     await supabase.auth.signOut()
     redirect('/login')

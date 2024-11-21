@@ -55,17 +55,33 @@ export async function getInningLineup(
  * Update or create multiple lineup entries
  */
 export async function updateLineup(lineup: InsertGameLineup[]): Promise<GameLineup[]> {
-  const { data, error } = await supabase
-    .from('game_lineups')
-    .upsert(lineup, {
-      onConflict: 'game_id,player_id,inning'
-    })
-    .select()
+  try {
+    console.log('Upserting lineup data:', JSON.stringify(lineup, null, 2));
+    
+    const { data, error } = await supabase
+      .from('game_lineups')
+      .upsert(lineup, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
+      .select();
 
-  if (error) throw error
-  if (!data) throw new Error('Failed to update lineup')
-  
-  return data
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      console.error('No data returned from upsert');
+      throw new Error('Failed to update lineup: No data returned');
+    }
+    
+    console.log('Successfully updated lineup:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in updateLineup:', error);
+    throw error;
+  }
 }
 
 /**

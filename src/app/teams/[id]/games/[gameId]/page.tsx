@@ -2,6 +2,7 @@
 import { Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import { getInitialTeam } from '../../actions'
+import { GameDetails } from '@/components/game/game-details'
 
 type Params = Promise<{ 
   id: string;
@@ -25,8 +26,7 @@ export default async function GamePage({
         </div>
       }
     >
-      {/* TODO: Add GameDetails component */}
-      <div>Game {gameId} for {team.name}</div>
+      <GameDetails gameId={gameId} team={team} />
     </Suspense>
   )
 }

@@ -1,4 +1,6 @@
 // src/components/game/lineup/lineup-builder.tsx
+'use client';
+
 import { useState, useEffect } from 'react';
 import { 
   DndContext, 
@@ -7,37 +9,33 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay,
+  DragEndEvent,
+  DragStartEvent,
 } from '@dnd-kit/core';
 import {
+  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { 
-  restrictToVerticalAxis,
-  restrictToParentElement,
-} from '@dnd-kit/modifiers';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
-import { Grip, Plus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
-interface Player {
+export interface Player {
   id: string;
   number: string;
   first_name: string;
   last_name: string;
   preferred_positions?: string[];
+  primary_position?: string;
 }
 
-interface LineupSlot {
+export interface LineupSlot {
   id: string;
   order: number;
-  position?: string;
+  position?: string | null;
   player?: Player;
 }
 
@@ -47,288 +45,313 @@ interface LineupBuilderProps {
   onLineupChange?: (lineup: LineupSlot[]) => void;
 }
 
-const DEFAULT_POSITIONS = [
-  { code: 'P', name: 'Pitcher' },
-  { code: 'C', name: 'Catcher' },
-  { code: '1B', name: 'First Base' },
-  { code: '2B', name: 'Second Base' },
-  { code: '3B', name: 'Third Base' },
-  { code: 'SS', name: 'Shortstop' },
-  { code: 'LF', name: 'Left Field' },
-  { code: 'CF', name: 'Center Field' },
-  { code: 'RF', name: 'Right Field' },
-  { code: 'DP', name: 'Designated Player' },
-  { code: 'FLEX', name: 'Flex' },
-];
+// Utility function to generate unique IDs
+const generateUniqueId = () => crypto.randomUUID();
 
-// Custom component for each sortable lineup slot
-const SortableLineupSlot = ({ 
+// Component to render a single lineup slot
+function SortableLineupSlot({ 
   slot, 
-  positionGroups,
   onPositionChange,
   onRemove 
 }: { 
   slot: LineupSlot;
-  positionGroups: { preferred: string[]; others: string[] };
   onPositionChange: (position: string) => void;
   onRemove: () => void;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: slot.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+}) {
+  const positions = slot.player?.preferred_positions || [];
+  const defaultPositions = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF'];
+  const availablePositions = [...new Set([...positions, ...defaultPositions])];
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={`
-        p-2 mb-1 flex items-center gap-2 
-        ${isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}
-      `}
-    >
-      <div 
-        {...attributes} 
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing"
-      >
-        <Grip className="h-4 w-4 text-muted-foreground" />
-      </div>
-
-      <div className="w-8 text-center font-mono text-sm">
-        {slot.player?.number}
-      </div>
-
-      <div className="flex-1 text-sm">
-        {slot.player ? (
-          <span>
-            {slot.player.first_name} {slot.player.last_name}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">Empty slot</span>
-        )}
-      </div>
-
-      <Select
-        value={slot.position}
-        onValueChange={onPositionChange}
-      >
-        <SelectTrigger className="w-20 h-8">
-          <SelectValue placeholder="Pos" />
-        </SelectTrigger>
-        <SelectContent>
-          {positionGroups.preferred.length > 0 && (
+    <Card className="p-2 mb-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm w-6 text-center">{slot.order}</span>
+          {slot.player ? (
             <>
-              <div className="text-xs px-2 py-1 text-muted-foreground">
-                Preferred Positions
-              </div>
-              {positionGroups.preferred.map((pos) => (
-                <SelectItem key={pos} value={pos}>
-                  {pos}
-                </SelectItem>
-              ))}
-              <SelectSeparator />
+              <span className="font-mono text-sm">#{slot.player.number}</span>
+              <span>{slot.player.first_name} {slot.player.last_name}</span>
             </>
+          ) : (
+            <span className="text-gray-400">Empty Slot</span>
           )}
-          <div className="text-xs px-2 py-1 text-muted-foreground">
-            All Positions
+        </div>
+        {slot.player && (
+          <div className="flex items-center gap-2">
+            <select
+              className="text-sm border rounded px-2 py-1"
+              value={slot.position || ''}
+              onChange={(e) => onPositionChange(e.target.value)}
+            >
+              <option value="">Position</option>
+              {availablePositions.map((pos) => (
+                <option key={pos} value={pos}>{pos}</option>
+              ))}
+            </select>
+            <button
+              onClick={onRemove}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
           </div>
-          {positionGroups.others.map((pos) => (
-            <SelectItem key={pos} value={pos}>
-              {pos}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Button 
-        variant="ghost" 
-        size="icon"
-        onClick={onRemove}
-        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </Card>
-  );
-};
-
-// Lineup drag overlay component
-const DragOverlayContent = ({ slot }: { slot: LineupSlot }) => {
-  return (
-    <Card className="p-2 shadow-lg ring-2 ring-primary/20 w-full opacity-90">
-      <div className="flex items-center gap-2">
-        <Grip className="h-4 w-4 text-muted-foreground" />
-        <div className="w-8 text-center font-mono text-sm">
-          {slot.player?.number}
-        </div>
-        <div className="flex-1">
-          {slot.player && (
-            <span>
-              {slot.player.first_name} {slot.player.last_name}
-            </span>
-          )}
-        </div>
-        {slot.position && (
-          <div className="w-20 text-center">{slot.position}</div>
         )}
       </div>
     </Card>
   );
-};
+}
 
 export default function LineupBuilder({
   players,
   initialLineup,
   onLineupChange
 }: LineupBuilderProps) {
-  // Initialize with 9 empty slots if no initial lineup
-  const [lineup, setLineup] = useState<LineupSlot[]>(
-    initialLineup || Array.from({ length: 9 }, (_, i) => ({
-      id: `slot-${i + 1}`,
+  // Initialize lineup with 9 empty slots or provided lineup
+  const [lineup, setLineup] = useState<LineupSlot[]>(() => {
+    if (initialLineup?.length) {
+      return initialLineup.map((slot, index) => ({
+        ...slot,
+        order: index + 1
+      }));
+    }
+    return Array.from({ length: 9 }, (_, i) => ({
+      id: generateUniqueId(),
       order: i + 1
-    }))
-  );
+    }));
+  });
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // Track available players (those not in lineup)
+  const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
 
-  // Configure dnd-kit sensors
+  // Track players being processed to prevent double-clicks
+  const [processingPlayers, setProcessingPlayers] = useState<Set<string>>(new Set());
+
+  // Update available players when lineup changes
+  useEffect(() => {
+    const usedPlayerIds = new Set(lineup.map(slot => slot.player?.id).filter(Boolean));
+    setAvailablePlayers(players.filter(player => !usedPlayerIds.has(player.id)));
+  }, [players, lineup]);
+
+  // Configure DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 }
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  // Get all unique positions
-  const getPositionGroups = (playerPositions?: string[]) => {
-    const preferred = playerPositions || [];
-    const defaultPositions = DEFAULT_POSITIONS.map(p => p.code);
-    const others = defaultPositions.filter(pos => !preferred.includes(pos));
-    return { preferred, others };
-  };
-
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragEnd = (event: any) => {
+  // Handle drag end for reordering
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (active.id !== over.id) {
-      setLineup((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        const newLineup = arrayMove(items, oldIndex, newIndex);
-        if (onLineupChange) onLineupChange(newLineup);
-        return newLineup;
-      });
-    }
-    
-    setActiveId(null);
-  };
+    if (!over || active.id === over.id) return;
 
-  const handlePositionChange = (slotId: string, position: string) => {
-    setLineup(prev => {
-      const newLineup = prev.map(slot => 
-        slot.id === slotId ? { ...slot, position } : slot
-      );
-      if (onLineupChange) onLineupChange(newLineup);
+    setLineup((items) => {
+      const oldIndex = items.findIndex((i) => i.id === active.id);
+      const newIndex = items.findIndex((i) => i.id === over.id);
+      
+      if (oldIndex === -1 || newIndex === -1) return items;
+      
+      const newLineup = arrayMove(items, oldIndex, newIndex).map((slot, index) => ({
+        ...slot,
+        order: index + 1
+      }));
+
+      if (onLineupChange) {
+        onLineupChange(newLineup);
+      }
+      
       return newLineup;
     });
   };
 
-  const handleRemovePlayer = (slotId: string) => {
+  // Handle adding a player to the lineup
+  const handleAddPlayer = async (player: Player) => {
+    // Prevent double-clicks
+    if (processingPlayers.has(player.id)) return;
+    
+    try {
+      setProcessingPlayers(prev => new Set(prev).add(player.id));
+      
+      setLineup(prev => {
+        // Find the first empty slot or create a new one
+        const emptySlotIndex = prev.findIndex(slot => !slot.player);
+        let newLineup;
+
+        if (emptySlotIndex === -1) {
+          // No empty slot found, add a new one
+          newLineup = [...prev, {
+            id: generateUniqueId(),
+            order: prev.length + 1,
+            player,
+            position: player.primary_position || null
+          }];
+        } else {
+          // Update the empty slot
+          newLineup = prev.map((slot, index) => 
+            index === emptySlotIndex 
+              ? { ...slot, player, position: player.primary_position || null }
+              : slot
+          );
+        }
+
+        // Update batting orders to be consecutive
+        newLineup = newLineup.map((slot, index) => ({
+          ...slot,
+          order: index + 1
+        }));
+
+        if (onLineupChange) {
+          onLineupChange(newLineup);
+        }
+
+        return newLineup;
+      });
+    } finally {
+      // Remove player from processing set after a short delay
+      setTimeout(() => {
+        setProcessingPlayers(prev => {
+          const next = new Set(prev);
+          next.delete(player.id);
+          return next;
+        });
+      }, 500);
+    }
+  };
+
+  // Handle removing a player from the lineup
+  const handleRemovePlayer = async (slotId: string) => {
+    setLineup(prev => {
+      // Get the slot we're removing
+      const slotIndex = prev.findIndex(slot => slot.id === slotId);
+      if (slotIndex === -1) return prev;
+
+      let newLineup;
+      if (slotIndex >= 9) {
+        // Remove the slot entirely if it's beyond the initial 9
+        newLineup = prev.filter((_, index) => index !== slotIndex);
+      } else {
+        // Just clear the player from the slot if it's in the initial 9
+        newLineup = prev.map((slot, index) => 
+          index === slotIndex ? { ...slot, player: undefined, position: undefined } : slot
+        );
+      }
+
+      // Update batting orders to be consecutive
+      newLineup = newLineup.map((slot, index) => ({
+        ...slot,
+        order: index + 1
+      }));
+
+      if (onLineupChange) {
+        onLineupChange(newLineup);
+      }
+
+      return newLineup;
+    });
+  };
+
+  // Handle position change
+  const handlePositionChange = (slotId: string, position: string) => {
     setLineup(prev => {
       const newLineup = prev.map(slot => {
         if (slot.id === slotId) {
-          return { ...slot, player: undefined, position: undefined };
+          return { ...slot, position };
         }
         return slot;
       });
-      if (onLineupChange) onLineupChange(newLineup);
+
+      if (onLineupChange) {
+        onLineupChange(newLineup);
+      }
+
       return newLineup;
     });
   };
-
-  const addLineupSlot = () => {
-    const newOrder = lineup.length + 1;
-    const newSlot = {
-      id: `slot-${newOrder}`,
-      order: newOrder
-    };
-    setLineup(prev => {
-      const newLineup = [...prev, newSlot];
-      if (onLineupChange) onLineupChange(newLineup);
-      return newLineup;
-    });
-  };
-
-  // Auto-expand lineup when all slots are filled
-  useEffect(() => {
-    const filledSlots = lineup.filter(slot => slot.player).length;
-    if (filledSlots === lineup.length) {
-      addLineupSlot();
-    }
-  }, [lineup]);
-
-  // Find active slot for drag overlay
-  const activeSlot = activeId ? lineup.find(slot => slot.id === activeId) : null;
 
   return (
-    <div className="space-y-2">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-      >
-        <SortableContext
-          items={lineup}
-          strategy={verticalListSortingStrategy}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <h3 className="font-semibold mb-2">Lineup</h3>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
         >
-          {lineup.map((slot) => (
-            <SortableLineupSlot
-              key={slot.id}
-              slot={slot}
-              positionGroups={getPositionGroups(slot.player?.preferred_positions)}
-              onPositionChange={(pos) => handlePositionChange(slot.id, pos)}
-              onRemove={() => handleRemovePlayer(slot.id)}
-            />
-          ))}
-        </SortableContext>
-
-        <DragOverlay>
-          {activeId && activeSlot ? (
-            <DragOverlayContent slot={activeSlot} />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-
-      <div className="text-right">
+          <SortableContext
+            items={lineup}
+            strategy={verticalListSortingStrategy}
+          >
+            {lineup.map((slot) => (
+              <SortableLineupSlot
+                key={slot.id}
+                slot={slot}
+                onPositionChange={(pos) => handlePositionChange(slot.id, pos)}
+                onRemove={() => handleRemovePlayer(slot.id)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
         <Button 
           variant="outline" 
           size="sm"
-          onClick={addLineupSlot}
+          onClick={() => {
+            setLineup(prev => {
+              // Only add a new slot if there are no empty slots
+              const hasEmptySlot = prev.some(slot => !slot.player);
+              if (hasEmptySlot) {
+                return prev; // Don't add a new slot if there's an empty one
+              }
+              
+              // Add new slot with next consecutive order
+              const newSlot = {
+                id: generateUniqueId(),
+                order: prev.length + 1,
+                position: null,
+                player: undefined
+              };
+              
+              const newLineup = [...prev, newSlot];
+              
+              if (onLineupChange) {
+                onLineupChange(newLineup);
+              }
+              return newLineup;
+            });
+          }}
+          className="mt-2"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Slot
         </Button>
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-2">Available Players</h3>
+        <div className="space-y-2">
+          {availablePlayers.map((player) => (
+            <Card
+              key={player.id}
+              className={`p-2 cursor-pointer transition-colors ${
+                processingPlayers.has(player.id) 
+                  ? 'bg-gray-100 cursor-not-allowed' 
+                  : 'hover:bg-gray-50'
+              }`}
+              onClick={() => !processingPlayers.has(player.id) && handleAddPlayer(player)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm">#{player.number}</span>
+                <span>{player.first_name} {player.last_name}</span>
+                {player.primary_position && (
+                  <span className="text-sm text-gray-500">({player.primary_position})</span>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ interface TeamLayoutProps {
 
 // src/app/teams/[id]/layout.tsx
 async function TeamLayoutContent({ params }: { params: { id: string }}) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerComponentClient<Database>({
     cookies: () => cookieStore
   })
@@ -33,9 +33,6 @@ async function TeamLayoutContent({ params }: { params: { id: string }}) {
     .select(`
       *,
       coach_teams!inner (
-        id,
-        team_id,
-        role,
         coach_id
       )
     `)
@@ -44,8 +41,7 @@ async function TeamLayoutContent({ params }: { params: { id: string }}) {
     .single()
 
   if (teamError || !team) {
-    console.error('Team error:', teamError)
-    notFound()
+    redirect('/teams')
   }
 
   return (
@@ -82,7 +78,7 @@ function LoadingTopNav() {
   )
 }
 
-export default function TeamLayout({ children, params }: TeamLayoutProps) {
+export default async function TeamLayout({ children, params }: TeamLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Suspense fallback={<LoadingTopNav />}>

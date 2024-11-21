@@ -27,10 +27,14 @@ export async function getInitialTeam(teamId: string): Promise<Team> {
           id,
           team_id,
           role
+        ),
+        players (
+          *
         )
       `)
       .eq('id', teamId)
       .eq('coach_teams.coach_id', user.id)
+      .eq('players.active', true)
       .single()
 
     if (teamError || !data) {
@@ -44,6 +48,7 @@ export async function getInitialTeam(teamId: string): Promise<Team> {
         team_id: string;
         role: string;
       }>;
+      players: Array<Database['public']['Tables']['players']['Row']>;
     };
 
     // Transform the data to include user information that we already have
@@ -59,7 +64,8 @@ export async function getInitialTeam(teamId: string): Promise<Team> {
             full_name: user.user_metadata?.full_name
           }
         }
-      }))
+      })),
+      players: baseTeam.players
     }
 
     return transformedTeam
