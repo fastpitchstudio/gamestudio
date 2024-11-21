@@ -159,7 +159,7 @@ export function DroppableLineup({
   roster,
   onPositionChange,
   onRemove,
-  onReorder,
+  _onReorder,
   isOver,
   activeId,
   overId,
