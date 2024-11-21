@@ -25,8 +25,7 @@ export default async function TeamLivePage({
   const resolvedParams = await params;
   const { id } = resolvedParams;
   
-  // Then handle cookies and Supabase client
-  const cookieStore = cookies();
+  // Then handle Supabase client
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -47,10 +46,13 @@ export default async function TeamLivePage({
         *,
         game_lineups (
           id,
-          player_id,
-          batting_order,
-          position,
-          inning
+          game_id,
+          team_id,
+          lineup,
+          substitutes,
+          notes,
+          created_at,
+          updated_at
         )
       `)
       .eq('id', searchParams.game)
@@ -70,10 +72,13 @@ export default async function TeamLivePage({
         *,
         game_lineups (
           id,
-          player_id,
-          batting_order,
-          position,
-          inning
+          game_id,
+          team_id,
+          lineup,
+          substitutes,
+          notes,
+          created_at,
+          updated_at
         )
       `)
       .eq('team_id', id)
