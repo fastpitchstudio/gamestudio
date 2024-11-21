@@ -8,7 +8,14 @@ import LiveGameContent from '@/components/game/live/live-game-content'
 import type { Database } from '@/lib/types/database-types'
 import type { Game } from '@/lib/types/supabase'
 
-type Params = Promise<{ id: string }>;
+/***********************
+// Next.js 13+ Dynamic Route Params Handling
+// Both params and searchParams must be treated as Promises
+***********************/
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
 export interface GameWithLineups extends Game {
   game_lineups?: Database['public']['Tables']['game_lineups']['Row'][];
@@ -17,12 +24,12 @@ export interface GameWithLineups extends Game {
 export default async function TeamLivePage({ 
   params,
   searchParams 
-}: { 
-  params: Params;
-  searchParams: { [key: string]: string | string[] | undefined };
-}): Promise<React.ReactElement> {
-  // First, await the params to get the id
-  const resolvedParams = await params;
+}: PageProps): Promise<React.ReactElement> {
+  // First, await both params and searchParams
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams
+  ]);
   const { id } = resolvedParams;
   
   // Then handle Supabase client
@@ -39,7 +46,7 @@ export default async function TeamLivePage({
   let currentGame: GameWithLineups | null = null;
 
   // First check for game in URL
-  if (searchParams.game) {
+  if (resolvedSearchParams.game) {
     const { data } = await supabase
       .from('games')
       .select(`
@@ -55,7 +62,7 @@ export default async function TeamLivePage({
           updated_at
         )
       `)
-      .eq('id', searchParams.game)
+      .eq('id', resolvedSearchParams.game)
       .eq('team_id', id)
       .single();
 
