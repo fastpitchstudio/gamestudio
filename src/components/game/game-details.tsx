@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineupBuilder } from './lineup-v2/lineup-builder';
 import { Loader2 } from 'lucide-react';
 import type { Team } from '@/lib/types/team';
+import type { Player } from '@/types/player';
 
 interface GameDetailsProps {
   gameId: string;
@@ -34,7 +35,7 @@ export function GameDetails({ gameId, team }: GameDetailsProps) {
             <LineupBuilder
               gameId={gameId}
               teamId={team.id}
-              players={(team as any).players || []}
+              players={(team as unknown as { players: Player[] }).players || []}
               previousGames={[]} // TODO: Load previous games
             />
           </Suspense>
