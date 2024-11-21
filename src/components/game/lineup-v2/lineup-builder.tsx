@@ -16,6 +16,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Player } from '@/types/player';
+import { Game } from '@/lib/types/supabase';
 import { useState, useMemo } from 'react';
 import { RosterPlayer } from './roster-player';
 import { Position, toPosition } from '@/types/lineup';
@@ -140,9 +141,11 @@ export function LineupBuilder({
 }: {
   gameId: string;
   teamId: string;
-  players: any[];
-  previousGames?: any[];
+  players: Player[];
+  previousGames?: Game[];
 }) {
+  console.log('Debug:', { playersLength: players.length, previousGamesLength: previousGames.length });
+
   const {
     roster,
     isLoading,
