@@ -27,7 +27,7 @@ interface DroppableLineupProps {
   roster: Player[];
   onPositionChange: (slotId: string, position: Position) => void;
   onRemove: (slotId: string) => void;
-  onReorder: (newLineup: LineupSlot[]) => void;
+  _onReorder: (newLineup: LineupSlot[]) => void;
   isOver?: boolean;
   activeId?: string | null;
   overId: string | null;
