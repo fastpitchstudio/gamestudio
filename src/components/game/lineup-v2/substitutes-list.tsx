@@ -17,15 +17,11 @@ export function SubstitutesList({
   substitutes,
   roster,
   isOver,
-  _onRemoveSubstitute
+  onRemoveSubstitute
 }: SubstitutesListProps) {
   const { setNodeRef } = useDroppable({
     id: 'substitutes-droppable'
   });
-
-  const handleRemove = (_subId: string) => {
-    // Removed the call to onUpdate as it's not defined in the new props
-  };
 
   return (
     <div
@@ -47,13 +43,15 @@ export function SubstitutesList({
               <span className="font-mono text-sm">#{player.number}</span>
               <span>{player.first_name} {player.last_name}</span>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleRemove(sub.id)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            {onRemoveSubstitute && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRemoveSubstitute(sub.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         );
       })}

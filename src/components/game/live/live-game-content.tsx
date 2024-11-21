@@ -19,7 +19,6 @@ import type {
   Team,
   InsertGameLineup
 } from '@/lib/types/supabase';
-import type { Database } from '@/lib/types/database-types';
 
 interface GameWithLineups extends Game {
   game_lineups?: GameLineup[];
@@ -37,7 +36,7 @@ export default function LiveGameContent({
   initialPlayers 
 }: LiveGameContentProps) {
   const router = useRouter();
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClientComponentClient();
   const [game, setGame] = useState<GameWithLineups | null>(initialGame);
   const [error, setError] = useState<string | null>(null);
 

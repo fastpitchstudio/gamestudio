@@ -3,16 +3,14 @@
 import {
   DndContext,
   closestCenter,
-  DragEndEvent,
   DragOverEvent,
   useSensor,
   useSensors,
   PointerSensor,
   DragOverlay,
   useDroppable,
-  Modifier,
 } from '@dnd-kit/core';
-import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -181,9 +179,9 @@ export function LineupBuilder({
     return 'roster';
   };
 
-const handleDragStart = (event: any) => {
-  setActiveId(event.active.id.toString());
-};
+  const handleDragStart = (event: DragOverEvent) => {
+    setActiveId(event.active.id.toString());
+  };
 
   const customModifier: Modifier = (args) => {
     const { transform, active, over } = args;
@@ -216,13 +214,14 @@ const handleDragStart = (event: any) => {
       const newIndex = lineup.findIndex(item => item.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
-        const newLineup = arrayMove(lineup, oldIndex, newIndex);
+        const newLineup = [...lineup];
+        [newLineup[oldIndex], newLineup[newIndex]] = [newLineup[newIndex], newLineup[oldIndex]];
         updateLineup(newLineup);
       }
     }
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragOverEvent) => {
     const { active, over } = event;
     setActiveId(null);
     setOverId(null);
@@ -278,7 +277,8 @@ const handleDragStart = (event: any) => {
         const newIndex = lineup.findIndex(item => item.id === over.id);
 
         if (oldIndex !== -1 && newIndex !== -1) {
-          const newLineup = arrayMove(lineup, oldIndex, newIndex);
+          const newLineup = [...lineup];
+          [newLineup[oldIndex], newLineup[newIndex]] = [newLineup[newIndex], newLineup[oldIndex]];
           updateLineup(newLineup);
         }
       }
