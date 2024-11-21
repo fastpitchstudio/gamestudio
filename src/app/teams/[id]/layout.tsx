@@ -16,9 +16,9 @@ interface TeamLayoutProps {
 
 // src/app/teams/[id]/layout.tsx
 async function TeamLayoutContent({ params }: { params: { id: string }}) {
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   const supabase = createServerComponentClient<Database>({
-    cookies: () => cookieStore
+    cookies: () => Promise.resolve(cookieStore)
   })
 
   // Get current user
@@ -52,7 +52,7 @@ async function TeamLayoutContent({ params }: { params: { id: string }}) {
       onSignOut={async () => {
         'use server'
         const cookieStore = cookies()
-        const supabase = createServerComponentClient({ cookies: () => cookieStore })
+        const supabase = createServerComponentClient({ cookies: () => Promise.resolve(cookieStore) })
         await supabase.auth.signOut()
         redirect('/login')
       }}
