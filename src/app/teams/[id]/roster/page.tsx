@@ -2,6 +2,7 @@
 import React from 'react'
 import { getInitialTeam } from '../actions'
 import TeamRosterClient from '@/components/roster/roster-client'
+import type { Team } from '../types'
 
 /***********************
 // Next.js 15+ Dynamic Route Params Handling
@@ -17,7 +18,7 @@ export default async function Page({
   params: Params 
 }): Promise<React.ReactElement> {
   const { id } = await params
-  const team = await getInitialTeam(id)
+  const team = await getInitialTeam(id) as Team
   
   const coachName = team.coach_teams?.[0]?.users?.user_metadata?.full_name || 
                    team.coach_teams?.[0]?.users?.email || 

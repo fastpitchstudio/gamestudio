@@ -8,6 +8,8 @@ import LiveGameContent from '@/components/game/live/live-game-content'
 import type { Database } from '@/lib/types/database-types'
 import type { Game } from '@/lib/types/supabase'
 
+type Params = Promise<{ id: string }>;
+
 export interface GameWithLineups extends Game {
   game_lineups?: Database['public']['Tables']['game_lineups']['Row'][];
 }
@@ -15,19 +17,24 @@ export interface GameWithLineups extends Game {
 export default async function TeamLivePage({ 
   params,
   searchParams 
-}: {
-  params: { id: string };
+}: { 
+  params: Params;
   searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const cookieStore = await cookies();
-  const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore });
+}): Promise<React.ReactElement> {
+  // First, await the params to get the id
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
+  
+  // Then handle cookies and Supabase client
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
     // redirect('/login'); // This line is commented out because the redirect function is not defined in the provided code
   }
 
-  const team = await getInitialTeam(params.id);
+  const team = await getInitialTeam(id);
   
   // Try to find active game first
   let currentGame: GameWithLineups | null = null;
@@ -47,7 +54,7 @@ export default async function TeamLivePage({
         )
       `)
       .eq('id', searchParams.game)
-      .eq('team_id', params.id)
+      .eq('team_id', id)
       .single();
 
     if (data) {
@@ -69,7 +76,7 @@ export default async function TeamLivePage({
           inning
         )
       `)
-      .eq('team_id', params.id)
+      .eq('team_id', id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(1)
@@ -84,7 +91,7 @@ export default async function TeamLivePage({
   const { data: rosterData } = await supabase
     .from('players')
     .select('*')
-    .eq('team_id', params.id)
+    .eq('team_id', id)
     .eq('active', true)
     .order('number');
 

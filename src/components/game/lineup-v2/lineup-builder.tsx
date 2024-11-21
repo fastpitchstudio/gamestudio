@@ -4,6 +4,7 @@ import {
   DndContext,
   closestCenter,
   DragOverEvent,
+  Modifier,
   useSensor,
   useSensors,
   PointerSensor,
