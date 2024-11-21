@@ -34,21 +34,14 @@ export default async function Layout({
     redirect('/login')
   }
 
-  // Check if we're in a team-specific context
-  const headersList = await headers()
-  const pathname = headersList.get('next-url') || '/'
-  const isTeamPage = pathname === '/teams'
+  // Check if we're on the teams index page
+  const headersList = headers()
+  const pathname = headersList.get('next-url') || ''
+  const isTeamsIndexPage = pathname === '/teams'
 
   return (
     <>
-      {isTeamPage && (
-        <TopNav 
-          teamId={null}
-          teamName={null}
-          teamLogoUrl={null}
-          onSignOut={handleSignOut}
-        />
-      )}
+      {isTeamsIndexPage && <TopNav onSignOut={handleSignOut} />}
       {children}
     </>
   )
