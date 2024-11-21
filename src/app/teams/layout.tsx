@@ -14,9 +14,9 @@ interface TeamsLayoutProps {
 export default async function Layout({ 
   children 
 }: TeamsLayoutProps) {
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   const supabase = createServerComponentClient<Database>({
-    cookies: () => cookieStore
+    cookies: () => Promise.resolve(cookieStore)
   })
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -26,8 +26,10 @@ export default async function Layout({
 
   const handleSignOut = async () => {
     'use server'
-    const cookieStore = await cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+    const cookieStore = cookies()
+    const supabase = createServerComponentClient({ 
+      cookies: () => Promise.resolve(cookieStore) 
+    })
     await supabase.auth.signOut()
     redirect('/login')
   }
@@ -41,6 +43,9 @@ export default async function Layout({
     <>
       {isTeamPage && (
         <TopNav 
+          teamId={null}
+          teamName={null}
+          teamLogoUrl={null}
           onSignOut={handleSignOut}
         />
       )}
