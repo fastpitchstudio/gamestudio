@@ -135,9 +135,13 @@ function SubstitutesList({
 export function LineupBuilder({
   gameId,
   teamId,
+  players,
+  previousGames = [],
 }: {
   gameId: string;
   teamId: string;
+  players: any[];
+  previousGames?: any[];
 }) {
   const {
     roster,
