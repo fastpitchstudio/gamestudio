@@ -34,7 +34,7 @@ export function GameDetails({ gameId, team }: GameDetailsProps) {
             <LineupBuilder
               gameId={gameId}
               teamId={team.id}
-              players={team.players || []}
+              players={(team as any).players || []}
               previousGames={[]} // TODO: Load previous games
             />
           </Suspense>
