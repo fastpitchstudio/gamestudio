@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { LineupSlot, SubstitutePlayer, PlayerAvailability } from '@/types/lineup';
 import { Player, transformPlayerFromSchema } from '@/types/player';
-import debounce from 'lodash/debounce';
+import { debounce } from 'lodash';
 import { createClient } from '@/lib/supabase/client';
 
 interface UseLineupManagerProps {
