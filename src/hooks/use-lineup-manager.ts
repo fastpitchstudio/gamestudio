@@ -259,7 +259,17 @@ export const useLineupManager = ({
           .from('game_lineups')
           .select(`
             *,
-            players (*)
+            players!inner (
+              id,
+              first_name,
+              last_name,
+              number,
+              primary_position,
+              secondary_positions,
+              team_id,
+              created_at,
+              updated_at
+            )
           `)
           .eq('game_id', gameId)
           .eq('team_id', teamId);
@@ -270,7 +280,7 @@ export const useLineupManager = ({
           // Transform lineup data into LineupSlot array
           const lineupSlots = lineupData.map(entry => ({
             id: entry.id,
-            player: transformPlayerFromSchema(entry.players),
+            player: transformPlayerFromSchema(entry.players[0]),
             position: entry.position,
             battingOrder: entry.batting_order,
             inning: entry.inning
