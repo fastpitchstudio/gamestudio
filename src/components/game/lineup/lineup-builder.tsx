@@ -59,7 +59,7 @@ function SortableLineupSlot({
 }) {
   const positions = slot.player?.preferred_positions || [];
   const defaultPositions = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF'];
-  const availablePositions = [...new Set([...positions, ...defaultPositions])];
+  const availablePositions = Array.from(new Set([...positions, ...defaultPositions]));
 
   return (
     <Card className="p-2 mb-2">
