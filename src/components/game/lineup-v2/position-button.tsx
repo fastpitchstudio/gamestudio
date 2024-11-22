@@ -63,8 +63,9 @@ function getPositionName(position: Position): string {
     CF: 'Center Field',
     RF: 'Right Field',
     DH: 'Designated Hitter',
-    PH: 'Pinch Hitter',
-    PR: 'Pinch Runner',
+    EH: 'Extra Hitter',
+    FLEX: 'Flex Player',
+    DP: 'Designated Player'
   };
 
   return positionNames[position] || position;
