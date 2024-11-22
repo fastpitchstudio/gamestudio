@@ -21,7 +21,7 @@ export interface LineupPlayer extends Player {
 }
 
 export interface LineupSlot {
-  id?: string;
+  id: string;  // Required id for drag and drop functionality
   player: Player;
   position: Position | null;
   battingOrder?: number;
