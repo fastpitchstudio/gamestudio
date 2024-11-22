@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { LineupSlot, SubstitutePlayer, PlayerAvailability } from '@/types/lineup';
+import { LineupSlot, SubstitutePlayer, PlayerAvailability, toPosition } from '@/types/lineup';
 import { Player, transformPlayerFromSchema } from '@/types/player';
 import { debounce } from 'lodash';
 import { createClient } from '@/lib/supabase/client';
@@ -265,7 +265,7 @@ export const useLineupManager = ({
               last_name,
               number,
               primary_position,
-              secondary_positions,
+              preferred_positions,
               team_id,
               created_at,
               updated_at
@@ -278,13 +278,26 @@ export const useLineupManager = ({
 
         if (lineupData) {
           // Transform lineup data into LineupSlot array
-          const lineupSlots = lineupData.map(entry => ({
-            id: entry.id,
-            player: transformPlayerFromSchema(entry.players[0]),
-            position: entry.position,
-            battingOrder: entry.batting_order,
-            inning: entry.inning
-          }));
+          const lineupSlots = lineupData.map(entry => {
+            const player = entry.players[0];
+            return {
+              id: entry.id,
+              player: {
+                id: player.id,
+                firstName: player.first_name,
+                lastName: player.last_name,
+                number: player.number,
+                primaryPosition: player.primary_position,
+                secondaryPositions: player.preferred_positions,
+                teamId: player.team_id,
+                createdAt: player.created_at,
+                updatedAt: player.updated_at,
+              },
+              position: toPosition(entry.position),
+              battingOrder: entry.batting_order,
+              inning: entry.inning
+            };
+          });
           setLineup(lineupSlots);
         }
 
