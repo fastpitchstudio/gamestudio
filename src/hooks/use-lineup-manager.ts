@@ -257,16 +257,39 @@ export const useLineupManager = ({
         // Load lineup and substitutes
         const { data: lineupData, error: lineupError } = await supabase
           .from('game_lineups')
+          .select(`
+            *,
+            players (*)
+          `)
+          .eq('game_id', gameId)
+          .eq('team_id', teamId);
+
+        if (lineupError) throw lineupError;
+
+        if (lineupData) {
+          // Transform lineup data into LineupSlot array
+          const lineupSlots = lineupData.map(entry => ({
+            id: entry.id,
+            player: transformPlayerFromSchema(entry.players),
+            position: entry.position,
+            battingOrder: entry.batting_order,
+            inning: entry.inning
+          }));
+          setLineup(lineupSlots);
+        }
+
+        // Load substitutes
+        const { data: subsData, error: subsError } = await supabase
+          .from('game_substitutes')
           .select('*')
           .eq('game_id', gameId)
           .eq('team_id', teamId)
           .maybeSingle();
 
-        if (lineupError) throw lineupError;
+        if (subsError) throw subsError;
 
-        if (lineupData) {
-          setLineup(lineupData.lineup || []);
-          setSubstitutes(lineupData.substitutes || []);
+        if (subsData?.substitutes) {
+          setSubstitutes(subsData.substitutes);
         }
 
         // Load player availability
