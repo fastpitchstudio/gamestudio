@@ -15,18 +15,6 @@ export type Position =
   | 'FLEX' // Flex Player
   | 'DP'; // Designated Player
 
-export interface Player {
-  id: string;
-  firstName: string;  
-  lastName: string;   
-  number?: number;
-  primaryPosition?: string;  
-  secondaryPositions?: string[];  
-  teamId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface LineupPlayer extends Player {
   position?: Position | null;
   batting_order?: number;
@@ -35,10 +23,13 @@ export interface LineupPlayer extends Player {
 export interface LineupSlot {
   id: string;
   playerId: string;
-  firstName: string;
-  lastName: string;
   position: Position | null;
   battingOrder?: number;
+}
+
+export interface LineupPreviewSlot extends LineupSlot {
+  firstName: string;
+  lastName: string;
 }
 
 export interface SubstitutePlayer {
@@ -54,7 +45,7 @@ export interface PreviousGameLineup {
   teamId: string;
   opponent?: string | null;
   gameDate: string;
-  lineup: LineupSlot[];
+  lineup: LineupPreviewSlot[];
   substitutes: SubstitutePlayer[];
   notes?: string;
   createdAt: string;
