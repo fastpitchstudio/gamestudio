@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Player } from '@/lib/types';
+import type { Player } from '@/lib/types/supabase';
 
 interface RosterViewProps {
   players: Player[];
@@ -67,7 +67,7 @@ const DraggablePlayer = ({
     >
       <div className="flex items-center gap-2" {...attributes} {...listeners}>
         <span className="font-mono text-sm">#{player.number}</span>
-        <span className="flex-1">{player.firstName} {player.lastName}</span>
+        <span className="flex-1">{player.first_name} {player.last_name}</span>
         
         <Button
           variant="ghost"
