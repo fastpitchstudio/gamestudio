@@ -41,12 +41,35 @@ export default function LiveGameContent({
   const [error, setError] = useState<string | null>(null);
 
   // Convert game lineups to our app's format
-  const initialLineup = game?.game_lineups?.map(gl => ({
-    id: gl.id,
-    player: initialPlayers.find(p => p.id === gl.playerId)!,
-    position: gl.position || undefined,
-    battingOrder: gl.battingOrder,
-  })) || [];
+  const initialLineup = game?.game_lineups?.map(gl => {
+    if (!gl.lineup || !Array.isArray(gl.lineup)) {
+      console.warn('Invalid lineup data:', gl.lineup);
+      return [];
+    }
+    return gl.lineup.map(lineupEntry => {
+      if (!lineupEntry || typeof lineupEntry !== 'object') {
+        console.warn('Invalid lineup entry:', lineupEntry);
+        return null;
+      }
+      // Access the nested playerId
+      const playerId = lineupEntry.playerId?.playerId;
+      if (!playerId) {
+        console.warn('No player ID found in lineup entry:', lineupEntry);
+        return null;
+      }
+      const player = initialPlayers?.find(p => p.id === playerId);
+      if (!player) {
+        console.warn(`Player not found for ID: ${playerId}`);
+        return null;
+      }
+      return {
+        id: lineupEntry.id,
+        player,
+        position: player?.primary_position || player?.preferred_positions?.[0] || undefined,
+        battingOrder: lineupEntry.battingOrder,
+      };
+    });
+  }).flat().filter(Boolean) || [];
 
   // Handle lineup changes
   const handleLineupChange = async (lineup: LineupSlot[]) => {
@@ -55,33 +78,33 @@ export default function LiveGameContent({
     try {
       // Convert lineup slots to database format
       const gameLineups: InsertGameLineup[] = lineup.map(slot => ({
-        gameId: game.id,
-        playerId: slot.player.id,
+        game_id: game.id,
+        player_id: slot.player.id,
         position: slot.position || null,
-        battingOrder: slot.battingOrder,
+        batting_order: slot.battingOrder,
         inning: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }));
 
       // Update the game lineups in the database
       const { error: updateError } = await supabase
         .from('game_lineups')
         .upsert(gameLineups, {
-          onConflict: 'gameId,playerId,inning'
+          onConflict: 'game_id,player_id,inning'
         });
 
       if (updateError) throw updateError;
 
       // Refresh the game data
-      const { data: updatedGame, error: gameError } = await supabase
+      const { data: updatedGame, error: refreshError } = await supabase
         .from('games')
         .select(`
           *,
           game_lineups (
             id,
-            playerId,
-            battingOrder,
+            player_id,
+            batting_order,
             position,
             inning
           )
@@ -89,7 +112,7 @@ export default function LiveGameContent({
         .eq('id', game.id)
         .single();
 
-      if (gameError) throw gameError;
+      if (refreshError) throw refreshError;
       setGame(updatedGame as GameWithLineups);
       
     } catch (error) {
