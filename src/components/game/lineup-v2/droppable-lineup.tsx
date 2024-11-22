@@ -8,7 +8,6 @@ import {
 } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Player } from '@/types/player';
 import { Position, STANDARD_POSITIONS, LineupSlot } from '@/types/lineup';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
