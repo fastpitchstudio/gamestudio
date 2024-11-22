@@ -35,6 +35,8 @@ export interface LineupPlayer extends Player {
 export interface LineupSlot {
   id: string;
   playerId: string;
+  firstName: string;
+  lastName: string;
   position: Position | null;
   battingOrder?: number;
 }
