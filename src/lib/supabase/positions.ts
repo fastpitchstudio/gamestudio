@@ -1,6 +1,6 @@
 // src/lib/supabase/positions.ts
 import { supabase } from './index'
-import type { Position } from '@/lib/types'
+import type { DbPosition } from '@/lib/types'
 
 interface PositionDisplayMap {
   [key: string]: string
@@ -27,7 +27,7 @@ const positionDisplayMap: PositionDisplayMap = {
 /**
  * Get all positions ordered by display order
  */
-export async function getPositions(): Promise<Position[]> {
+export async function getPositions(): Promise<DbPosition[]> {
   const { data, error } = await supabase
     .from('positions')
     .select()
@@ -40,7 +40,7 @@ export async function getPositions(): Promise<Position[]> {
 /**
  * Get position by code
  */
-export async function getPosition(code: string): Promise<Position> {
+export async function getPosition(code: string): Promise<DbPosition> {
   const { data, error } = await supabase
     .from('positions')
     .select()
@@ -66,7 +66,7 @@ export function getPositionDisplay(code: string | null): string {
  */
 export async function getPositionsByNumericRef(
   numericRef: number
-): Promise<Position[]> {
+): Promise<DbPosition[]> {
   const { data, error } = await supabase
     .from('positions')
     .select()
@@ -80,7 +80,7 @@ export async function getPositionsByNumericRef(
 /**
  * Get all field positions (excluding special positions)
  */
-export async function getFieldPositions(): Promise<Position[]> {
+export async function getFieldPositions(): Promise<DbPosition[]> {
   const { data, error } = await supabase
     .from('positions')
     .select()

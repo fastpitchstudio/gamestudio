@@ -2,13 +2,13 @@
 import { supabase } from './index'
 import type { 
   Player, 
-  Position,
+  DbPosition,
   InsertPlayer, 
   UpdatePlayer,
 } from '@/lib/types'
 
 interface PlayerWithPosition extends Player {
-  positions: Position
+  positions: DbPosition
 }
 
 interface PlayerStats {

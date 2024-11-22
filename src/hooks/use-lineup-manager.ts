@@ -294,7 +294,7 @@ export const useLineupManager = ({
                 updatedAt: player.updated_at,
               },
               position: toPosition(entry.position),
-              battingOrder: entry.batting_order,
+              battingOrder: entry.batting_order ?? undefined,
               inning: entry.inning
             };
           });
@@ -312,7 +312,28 @@ export const useLineupManager = ({
         if (subsError) throw subsError;
 
         if (subsData?.substitutes) {
-          setSubstitutes(subsData.substitutes);
+          try {
+            const parsedSubs = JSON.parse(
+              typeof subsData.substitutes === 'string' 
+                ? subsData.substitutes 
+                : JSON.stringify(subsData.substitutes)
+            );
+            
+            // Validate and transform the parsed data
+            const validSubs = Array.isArray(parsedSubs) 
+              ? parsedSubs.map(sub => ({
+                  id: sub.id,
+                  playerId: sub.playerId,
+                  replacedPlayerId: sub.replacedPlayerId,
+                  inningNumber: sub.inningNumber
+                }))
+              : [];
+              
+            setSubstitutes(validSubs);
+          } catch (error) {
+            console.error('Error parsing substitutes:', error);
+            setSubstitutes([]);
+          }
         }
 
         // Load player availability

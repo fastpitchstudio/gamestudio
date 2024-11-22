@@ -2,7 +2,7 @@
 import { supabase } from './index'
 import type { 
   GameLineup, 
-  InsertGameLineup, 
+  DbInsertGameLineup, 
   UpdateGameLineup,
   Player,
 } from '@/lib/types'
@@ -54,7 +54,7 @@ export async function getInningLineup(
 /**
  * Update or create multiple lineup entries
  */
-export async function updateLineup(lineup: InsertGameLineup[]): Promise<GameLineup[]> {
+export async function updateLineup(lineup: DbInsertGameLineup[]): Promise<GameLineup[]> {
   try {
     console.log('Upserting lineup data:', JSON.stringify(lineup, null, 2));
     
@@ -136,7 +136,7 @@ export async function copyInningLineup(
 ): Promise<GameLineup[]> {
   const sourceLineup = await getInningLineup(gameId, fromInning)
   
-  const newLineup: InsertGameLineup[] = sourceLineup.map(entry => ({
+  const newLineup: DbInsertGameLineup[] = sourceLineup.map(entry => ({
     game_id: gameId,
     player_id: entry.player_id,
     batting_order: entry.batting_order,

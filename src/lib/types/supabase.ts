@@ -2,7 +2,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { PostgrestError } from '@supabase/supabase-js'
 import type { Database } from './database-types'
-import type { Position } from '@/types/lineup';
 
 // Export types from supabase-js for convenience
 export type SupabaseClient = ReturnType<typeof createClient<Database>>
@@ -16,7 +15,7 @@ export type UpdateTables<T extends keyof Database['public']['Tables']> = Databas
 // Common table types
 export type Team = Database['public']['Tables']['teams']['Row']
 export type Player = Database['public']['Tables']['players']['Row']
-export type Position = Tables<'positions'>
+export type DbPosition = Tables<'positions'>
 export type Game = Database['public']['Tables']['games']['Row']
 export type GameLineup = Database['public']['Tables']['game_lineups']['Row']
 export type GameHighlight = Tables<'game_highlights'>
@@ -28,7 +27,7 @@ export type CoachInvitation = Tables<'coach_invitations'>
 export type InsertTeam = InsertTables<'teams'>
 export type InsertPlayer = InsertTables<'players'>
 export type InsertGame = InsertTables<'games'>
-export type InsertGameLineup = InsertGameLineup
+export type DbInsertGameLineup = InsertTables<'game_lineups'>
 export type InsertGameHighlight = InsertTables<'game_highlights'>
 export type InsertCoachProfile = InsertTables<'coach_profiles'>
 export type InsertCoachSettings = InsertTables<'coach_settings'>
@@ -58,22 +57,3 @@ export type WithCreatedAt = {
 export type QueryResult<T> = Promise<T>
 export type QueryArrayResult<T> = Promise<T[]>
 export type MutationResult<T> = Promise<T>
-
-// New lineup system types
-export interface InsertGameLineup {
-  game_id: string;
-  team_id: string;
-  lineup: {
-    id: string;
-    player: {
-      id: string;
-      number?: string;
-      first_name: string;
-      last_name: string;
-      primary_position: Position;
-      preferred_positions: Position[];
-      position?: Position | null;
-    };
-    batting_order: number;
-  }[];
-}

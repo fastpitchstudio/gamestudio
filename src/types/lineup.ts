@@ -61,7 +61,7 @@ export interface LineupState {
 export interface PlayerAvailability {
   playerId: string;
   isAvailable: boolean;
-  notes?: string;
+  notes?: string | null;
 }
 
 // Position configuration for visual representation
