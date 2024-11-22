@@ -29,10 +29,9 @@ export function LineupSlot({
   onPositionChange,
   onRemove 
 }: LineupSlotProps) {
-  // Get the name fields from either format
-  const firstName = player.firstName || player.first_name || '';
-  const lastName = player.lastName || player.last_name || '';
-  const primaryPosition = player.primaryPosition || player.primary_position || '';
+  const firstName = player.firstName || '';
+  const lastName = player.lastName || '';
+  const primaryPosition = player.primaryPosition || '';
   const number = player.number || '';
 
   const {

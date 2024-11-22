@@ -52,9 +52,9 @@ export function LineupTemplateDialog({
             <h4 className="text-sm font-medium">Previous Games</h4>
             {previousGames.map((game) => (
               <div
-                key={game.game_id}
+                key={game.gameId}
                 className="relative"
-                onMouseEnter={() => setHoveredGameId(game.game_id)}
+                onMouseEnter={() => setHoveredGameId(game.gameId)}
                 onMouseLeave={() => setHoveredGameId(null)}
               >
                 <Button
@@ -67,13 +67,13 @@ export function LineupTemplateDialog({
                       vs {game.opponent}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {format(new Date(game.game_date), 'MMM d, yyyy')}
+                      {format(new Date(game.gameDate), 'MMM d, yyyy')}
                     </div>
                   </div>
                 </Button>
 
                 <AnimatePresence>
-                  {hoveredGameId === game.game_id && (
+                  {hoveredGameId === game.gameId && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -94,7 +94,7 @@ export function LineupTemplateDialog({
                                 {index + 1}
                               </span>
                               <span>
-                                {player.first_name} {player.last_name}
+                                {player.firstName} {player.lastName}
                               </span>
                               {player.position && (
                                 <span className="text-gray-500">

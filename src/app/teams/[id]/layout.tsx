@@ -12,6 +12,7 @@ interface TeamLayoutProps {
   params: {
     id: string
   }
+  searchParams?: { [key: string]: string | string[] | undefined }
 }
 
 // src/app/teams/[id]/layout.tsx

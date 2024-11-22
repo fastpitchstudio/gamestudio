@@ -50,6 +50,8 @@ export interface PreviousGameLineup {
   id: string;
   gameId: string;
   teamId: string;
+  opponent?: string | null;
+  gameDate: string;
   lineup: LineupSlot[];
   substitutes: SubstitutePlayer[];
   notes?: string;
