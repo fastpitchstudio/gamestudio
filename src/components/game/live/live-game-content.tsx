@@ -43,9 +43,9 @@ export default function LiveGameContent({
   // Convert game lineups to our app's format
   const initialLineup = game?.game_lineups?.map(gl => ({
     id: gl.id,
-    player: initialPlayers.find(p => p.id === gl.player_id)!,
+    player: initialPlayers.find(p => p.id === gl.playerId)!,
     position: gl.position || undefined,
-    batting_order: gl.batting_order,
+    battingOrder: gl.battingOrder,
   })) || [];
 
   // Handle lineup changes
@@ -55,20 +55,20 @@ export default function LiveGameContent({
     try {
       // Convert lineup slots to database format
       const gameLineups: InsertGameLineup[] = lineup.map(slot => ({
-        game_id: game.id,
-        player_id: slot.player.id,
+        gameId: game.id,
+        playerId: slot.player.id,
         position: slot.position || null,
-        batting_order: slot.batting_order,
+        battingOrder: slot.battingOrder,
         inning: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }));
 
       // Update the game lineups in the database
       const { error: updateError } = await supabase
         .from('game_lineups')
         .upsert(gameLineups, {
-          onConflict: 'game_id,player_id,inning'
+          onConflict: 'gameId,playerId,inning'
         });
 
       if (updateError) throw updateError;
@@ -80,8 +80,8 @@ export default function LiveGameContent({
           *,
           game_lineups (
             id,
-            player_id,
-            batting_order,
+            playerId,
+            battingOrder,
             position,
             inning
           )
@@ -150,7 +150,7 @@ export default function LiveGameContent({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          {game.home_team_name} vs {game.away_team_name}
+          {game.homeTeamName} vs {game.awayTeamName}
         </h1>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm">
