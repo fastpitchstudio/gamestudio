@@ -86,9 +86,11 @@ export default function LiveGameContent({
   // Convert game lineups to our app's format
   const initialLineup = initialGame?.game_lineups?.map((slot) => {
     if (!slot) return null;
+    const rosterPlayer = rosterPlayers.find(rp => rp.id === slot.player_id);
+    if (!rosterPlayer) return null;
     const converted: LineupSlot = {
       id: slot.id,
-      playerId: slot.player_id,
+      player: toFrontendPlayer(rosterPlayer),
       position: toPosition(slot.position),
       ...(slot.batting_order !== null && { battingOrder: slot.batting_order })
     };
@@ -105,7 +107,7 @@ export default function LiveGameContent({
         id: slot.id,
         game_id: game.id,
         team_id: team.id,
-        player_id: slot.playerId,
+        player_id: slot.player.id,
         position: slot.position,
         batting_order: slot.battingOrder ?? null,
         inning: 1,

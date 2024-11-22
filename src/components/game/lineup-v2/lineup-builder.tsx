@@ -261,8 +261,10 @@ export function LineupBuilder({
       if (overType === 'lineup') {
         const newSlot: LineupSlot = {
           id: `lineup-${Date.now()}`,
-          playerId: player.id,
+          player,
           position: player.primaryPosition ? toPosition(player.primaryPosition) : null,
+          battingOrder: lineup.length + 1,
+          inning: 1,
         };
 
         if (over.id === 'lineup') {
@@ -272,6 +274,10 @@ export function LineupBuilder({
           if (overIndex !== -1) {
             const newLineup = [...lineup];
             newLineup.splice(overIndex, 0, newSlot);
+            // Update batting orders
+            newLineup.forEach((slot, index) => {
+              slot.battingOrder = index + 1;
+            });
             updateLineup(newLineup);
           } else {
             updateLineup([...lineup, newSlot]);
@@ -291,7 +297,7 @@ export function LineupBuilder({
 
         const newSub: SubstituteItem = {
           id: `sub-${Date.now()}`,
-          playerId: lineupItem.playerId,
+          playerId: lineupItem.player.id,
         };
         updateSubstitutes([...substitutes, newSub]);
         updateLineup(lineup.filter(item => item.id !== active.id));
@@ -315,8 +321,10 @@ export function LineupBuilder({
 
         const newSlot: LineupSlot = {
           id: `lineup-${Date.now()}`,
-          playerId: subItem.playerId,
+          player,
           position: player.primaryPosition ? toPosition(player.primaryPosition) : null,
+          battingOrder: lineup.length + 1,
+          inning: 1,
         };
 
         if (over.id === 'lineup') {
@@ -326,6 +334,10 @@ export function LineupBuilder({
           if (overIndex !== -1) {
             const newLineup = [...lineup];
             newLineup.splice(overIndex, 0, newSlot);
+            // Update batting orders
+            newLineup.forEach((slot, index) => {
+              slot.battingOrder = index + 1;
+            });
             updateLineup(newLineup);
           } else {
             updateLineup([...lineup, newSlot]);
@@ -399,7 +411,7 @@ export function LineupBuilder({
             <h2 className="font-semibold">Roster</h2>
             <div className="space-y-2">
               {players.map((player) => {
-                const isInLineup = lineup.some(slot => slot.playerId === player.id);
+                const isInLineup = lineup.some(slot => slot.player.id === player.id);
                 const isSubstitute = substitutes.some(sub => sub.playerId === player.id);
                 
                 if (isInLineup || isSubstitute) return null;
@@ -425,7 +437,7 @@ export function LineupBuilder({
               let player;
               if (activeId.toString().startsWith('lineup-')) {
                 const lineupItem = lineup.find(item => item.id === activeId);
-                player = lineupItem ? players.find(p => p.id === lineupItem.playerId) : null;
+                player = lineupItem ? lineupItem.player : null;
               } else if (activeId.toString().startsWith('sub-')) {
                 const subItem = substitutes.find(item => item.id === activeId);
                 player = subItem ? players.find(p => p.id === subItem.playerId) : null;

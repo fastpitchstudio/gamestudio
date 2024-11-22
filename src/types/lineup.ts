@@ -21,10 +21,11 @@ export interface LineupPlayer extends Player {
 }
 
 export interface LineupSlot {
-  id: string;
-  playerId: string;
+  id?: string;
+  player: Player;
   position: Position | null;
   battingOrder?: number;
+  inning?: number;
 }
 
 export interface LineupPreviewSlot extends LineupSlot {

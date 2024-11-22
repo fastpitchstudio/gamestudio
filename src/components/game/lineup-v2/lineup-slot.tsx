@@ -12,11 +12,9 @@ import {
   STANDARD_POSITIONS,
   SPECIAL_POSITIONS
 } from '@/types/lineup';
-import { Player } from '@/types/player';
 
 interface LineupSlotProps {
   slot: LineupSlotType;
-  player: Player;
   hasPositionConflict?: boolean;
   onPositionChange: (slotId: string, position: Position | null) => void;
   onRemove: (slotId: string) => void;
@@ -24,11 +22,11 @@ interface LineupSlotProps {
 
 export function LineupSlot({ 
   slot, 
-  player,
   hasPositionConflict = false,
   onPositionChange,
   onRemove 
 }: LineupSlotProps) {
+  const player = slot.player;
   const firstName = player.firstName || '';
   const lastName = player.lastName || '';
   const primaryPosition = player.primaryPosition || '';

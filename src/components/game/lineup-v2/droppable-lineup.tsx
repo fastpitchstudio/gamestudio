@@ -9,18 +9,11 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { Player } from '@/types/player';
-import { Position, STANDARD_POSITIONS } from '@/types/lineup';
+import { Position, STANDARD_POSITIONS, LineupSlot } from '@/types/lineup';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-
-interface LineupSlot {
-  id: string;
-  playerId: string;
-  position: Position | null;
-  battingOrder?: number;
-}
 
 interface DroppableLineupProps {
   lineup: LineupSlot[];
@@ -36,7 +29,6 @@ interface DroppableLineupProps {
 
 interface DroppableLineupItemProps {
   slot: LineupSlot;
-  player: Player;
   index: number;
   onPositionChange: (slotId: string, position: Position) => void;
   onRemove: (slotId: string) => void;
@@ -46,7 +38,6 @@ interface DroppableLineupItemProps {
 
 function DroppableLineupItem({
   slot,
-  player,
   index,
   onPositionChange,
   onRemove,
@@ -65,7 +56,7 @@ function DroppableLineupItem({
     data: {
       type: 'lineup',
       index,
-      playerId: player.id,
+      playerId: slot.playerId,
     },
   });
 
@@ -73,6 +64,8 @@ function DroppableLineupItem({
     transform: CSS.Transform.toString(transform),
     transition,
   } : undefined;
+
+  const player = slot.player;
 
   return (
     <div className="relative">
@@ -204,23 +197,17 @@ export function DroppableLineup({
         {/* Lineup items */}
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
-            {lineup.map((slot, index) => {
-              const player = roster.find(p => p.id === slot.playerId);
-              if (!player) return null;
-
-              return (
-                <DroppableLineupItem
-                  key={slot.id}
-                  slot={slot}
-                  player={player}
-                  index={index}
-                  onPositionChange={onPositionChange}
-                  onRemove={onRemove}
-                  isPositionConflicting={conflictingPositions?.includes(slot.position as Position) ?? false}
-                  overId={overId}
-                />
-              );
-            })}
+            {lineup.map((slot, index) => (
+              <DroppableLineupItem
+                key={slot.id}
+                slot={slot}
+                index={index}
+                onPositionChange={onPositionChange}
+                onRemove={onRemove}
+                isPositionConflicting={conflictingPositions?.includes(slot.position as Position) ?? false}
+                overId={overId}
+              />
+            ))}
 
             {/* Last position droppable */}
             {lineup.length > 0 && (

@@ -72,18 +72,38 @@ export const useLineupManager = ({
       }
 
       // Save lineup and substitutes
-      const { error: lineupError } = await supabase
-        .from('game_lineups')
-        .upsert({
+      if (data.lineup) {
+        const lineupEntries = data.lineup.map((slot: LineupSlot) => ({
           game_id: gameId,
-          team_id: teamId,
-          lineup: data.lineup || lineup,
-          substitutes: data.substitutes || substitutes,
+          player_id: slot.player.id,
+          position: slot.position,
+          batting_order: slot.battingOrder,
+          inning: 1, // Default to first inning
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        }));
 
-      if (lineupError) throw lineupError;
+        const { error: lineupError } = await supabase
+          .from('game_lineups')
+          .upsert(lineupEntries);
+
+        if (lineupError) throw lineupError;
+      }
+
+      // Save substitutes
+      if (data.substitutes) {
+        const { error: substitutesError } = await supabase
+          .from('game_substitutes')
+          .upsert({
+            game_id: gameId,
+            team_id: teamId,
+            substitutes: data.substitutes,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (substitutesError) throw substitutesError;
+      }
 
       // Save player availability
       if (data.availability) {
