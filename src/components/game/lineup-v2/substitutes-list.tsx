@@ -41,7 +41,7 @@ export function SubstitutesList({
           >
             <div className="flex items-center gap-2">
               <span className="font-mono text-sm">#{player.number}</span>
-              <span>{player.first_name} {player.last_name}</span>
+              <span>{player.firstName} {player.lastName}</span>
             </div>
             {onRemoveSubstitute && (
               <Button
