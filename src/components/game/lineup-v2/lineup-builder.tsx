@@ -32,8 +32,6 @@ interface SortableSubstituteProps {
   player: Player;
 }
 
-interface LineupItem extends LineupSlot {}
-
 interface SubstituteItem {
   id: string;
   playerId: string;
@@ -43,7 +41,7 @@ interface LineupBuilderProps {
   gameId: string;
   teamId: string;
   players: Player[];
-  previousGames?: Game[];
+  _previousGames?: Game[];
   initialLineup?: LineupSlot[];
   onLineupChange?: (lineup: LineupSlot[]) => Promise<void>;
 }
@@ -144,7 +142,7 @@ export function LineupBuilder({
   gameId,
   teamId,
   players,
-  previousGames = [],
+  _previousGames = [],
   initialLineup,
   onLineupChange,
 }: LineupBuilderProps) {

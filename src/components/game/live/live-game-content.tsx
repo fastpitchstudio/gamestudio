@@ -10,12 +10,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusCircle, Timer, FileDown, Pencil } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import type { LineupSlot, Position } from '@/types/lineup';
+import type { LineupSlot } from '@/types/lineup';
 import type { Database } from '@/lib/types/database-types';
 import type { 
   Game, 
   Player as DbPlayer,  
-  GameLineup,
   Team
 } from '@/lib/types/supabase';
 import type { Player as FrontendPlayer } from '@/types/player';
@@ -252,7 +251,7 @@ export default function LiveGameContent({
               gameId={game.id}
               teamId={team.id}
               players={frontendPlayers}
-              previousGames={[]}
+              _previousGames={[]}
               initialLineup={initialLineup}
               onLineupChange={handleLineupChange}
             />
