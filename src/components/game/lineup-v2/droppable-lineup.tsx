@@ -54,7 +54,7 @@ function DroppableLineupItem({
     data: {
       type: 'lineup',
       index,
-      playerId: slot.playerId,
+      playerId: slot.player.id,
     },
   });
 
