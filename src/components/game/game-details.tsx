@@ -36,7 +36,7 @@ export function GameDetails({ gameId, team }: GameDetailsProps) {
               gameId={gameId}
               teamId={team.id}
               players={(team as unknown as { players: Player[] }).players || []}
-              previousGames={[]} // TODO: Load previous games
+              _previousGames={[]} // TODO: Load previous games
             />
           </Suspense>
         </TabsContent>

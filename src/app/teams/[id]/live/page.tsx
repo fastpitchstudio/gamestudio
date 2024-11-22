@@ -9,10 +9,11 @@ import type { Database } from '@/lib/types/database-types';
 import type { Game, GameLineup } from '@/lib/types/supabase';
 
 /***********************
-// Next.js 13+ Dynamic Route Params Handling
+// Next.js 15+ Dynamic Route Params Handling
+// Params must be treated as a Promise and awaited before use
 ***********************/
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
   searchParams: { [key: string]: string | string[] | undefined };
 };
 
@@ -26,7 +27,7 @@ export default async function TeamLivePage({
   params,
   searchParams 
 }: PageProps): Promise<React.ReactElement> {
-  const { id } = params;
+  const { id } = await params;
   const gameId = typeof searchParams.game === 'string' ? searchParams.game : undefined;
   
   // Then handle Supabase client
