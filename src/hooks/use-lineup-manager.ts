@@ -92,12 +92,20 @@ export const useLineupManager = ({
 
       // Save substitutes
       if (data.substitutes) {
+        // Convert SubstitutePlayer array to a plain object array for JSON storage
+        const substitutesJson = data.substitutes.map(sub => ({
+          id: sub.id,
+          playerId: sub.playerId,
+          replacedPlayerId: sub.replacedPlayerId,
+          inningNumber: sub.inningNumber
+        }));
+
         const { error: substitutesError } = await supabase
           .from('game_substitutes')
           .upsert({
             game_id: gameId,
             team_id: teamId,
-            substitutes: data.substitutes,
+            substitutes: substitutesJson,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
