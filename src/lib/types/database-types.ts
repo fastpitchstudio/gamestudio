@@ -404,6 +404,32 @@ export interface Database {
           created_at?: string
         }
       }
+      game_substitutes: {
+        Row: {
+          id: string
+          game_id: string
+          team_id: string
+          substitutes: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          team_id: string
+          substitutes: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          team_id?: string
+          substitutes?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
