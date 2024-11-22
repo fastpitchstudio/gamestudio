@@ -10,24 +10,60 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PlusCircle, Timer, FileDown, Pencil } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-
-import type { LineupSlot } from '@/types/lineup';
+import type { LineupSlot, Position } from '@/types/lineup';
+import type { Database } from '@/lib/types/database-types';
 import type { 
   Game, 
-  Player, 
+  Player as DbPlayer,  
   GameLineup,
-  Team,
-  InsertGameLineup
+  Team
 } from '@/lib/types/supabase';
+import type { Player as FrontendPlayer } from '@/types/player';
+import type { Player as RosterPlayer } from '@/lib/types';
+import { toPosition } from '@/types/lineup';
+
+// Transform database player to frontend player type
+function toFrontendPlayer(dbPlayer: DbPlayer): FrontendPlayer {
+  return {
+    id: dbPlayer.id,
+    firstName: dbPlayer.first_name,
+    lastName: dbPlayer.last_name,
+    number: dbPlayer.number,
+    primaryPosition: dbPlayer.primary_position,
+    teamId: dbPlayer.team_id,
+    createdAt: dbPlayer.created_at,
+    updatedAt: dbPlayer.updated_at
+  };
+}
+
+// Transform database player to roster player type
+function toRosterPlayer(dbPlayer: DbPlayer): RosterPlayer {
+  return {
+    ...dbPlayer,
+    available: dbPlayer.available || false,
+    active: dbPlayer.active || false
+  };
+}
 
 interface GameWithLineups extends Game {
-  game_lineups?: GameLineup[];
+  game_lineups?: Array<{
+    id: string;
+    game_id: string;
+    player_id: string;
+    position: string | null;
+    batting_order: number | null;
+    inning: number;
+    created_at: string;
+    updated_at: string;
+  }>;
+  homeTeamName: string;
+  awayTeamName: string;
 }
 
 interface LiveGameContentProps {
   team: Team;
   initialGame: GameWithLineups | null;
-  initialPlayers: Player[];
+  initialPlayers: DbPlayer[];  
 }
 
 export default function LiveGameContent({ 
@@ -36,40 +72,29 @@ export default function LiveGameContent({
   initialPlayers 
 }: LiveGameContentProps) {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClientComponentClient<Database>();
   const [game, setGame] = useState<GameWithLineups | null>(initialGame);
   const [error, setError] = useState<string | null>(null);
-
+  
+  // Keep two separate states for different player types
+  const [frontendPlayers, setFrontendPlayers] = useState<FrontendPlayer[]>(() => 
+    initialPlayers.map(toFrontendPlayer)
+  );
+  const [rosterPlayers, setRosterPlayers] = useState<RosterPlayer[]>(() => 
+    initialPlayers.map(toRosterPlayer)
+  );
+  
   // Convert game lineups to our app's format
-  const initialLineup = game?.game_lineups?.map(gl => {
-    if (!gl.lineup || !Array.isArray(gl.lineup)) {
-      console.warn('Invalid lineup data:', gl.lineup);
-      return [];
-    }
-    return gl.lineup.map(lineupEntry => {
-      if (!lineupEntry || typeof lineupEntry !== 'object') {
-        console.warn('Invalid lineup entry:', lineupEntry);
-        return null;
-      }
-      // Access the nested playerId
-      const playerId = lineupEntry.playerId?.playerId;
-      if (!playerId) {
-        console.warn('No player ID found in lineup entry:', lineupEntry);
-        return null;
-      }
-      const player = initialPlayers?.find(p => p.id === playerId);
-      if (!player) {
-        console.warn(`Player not found for ID: ${playerId}`);
-        return null;
-      }
-      return {
-        id: lineupEntry.id,
-        player,
-        position: player?.primary_position || player?.preferred_positions?.[0] || undefined,
-        battingOrder: lineupEntry.battingOrder,
-      };
-    });
-  }).flat().filter(Boolean) || [];
+  const initialLineup = initialGame?.game_lineups?.map((slot) => {
+    if (!slot) return null;
+    const converted: LineupSlot = {
+      id: slot.id,
+      playerId: slot.player_id,
+      position: toPosition(slot.position),
+      ...(slot.batting_order !== null && { battingOrder: slot.batting_order })
+    };
+    return converted;
+  }).filter((slot): slot is LineupSlot => slot !== null) || [];
 
   // Handle lineup changes
   const handleLineupChange = async (lineup: LineupSlot[]) => {
@@ -77,14 +102,16 @@ export default function LiveGameContent({
 
     try {
       // Convert lineup slots to database format
-      const gameLineups: InsertGameLineup[] = lineup.map(slot => ({
+      const gameLineups = lineup.map(slot => ({
+        id: slot.id,
         game_id: game.id,
-        player_id: slot.player.id,
-        position: slot.position || null,
-        batting_order: slot.battingOrder,
+        team_id: team.id,
+        player_id: slot.playerId,
+        position: slot.position,
+        batting_order: slot.battingOrder ?? null,
         inning: 1,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
 
       // Update the game lineups in the database
@@ -101,20 +128,20 @@ export default function LiveGameContent({
         .from('games')
         .select(`
           *,
-          game_lineups (
-            id,
-            player_id,
-            batting_order,
-            position,
-            inning
-          )
+          game_lineups (*)
         `)
         .eq('id', game.id)
         .single();
 
       if (refreshError) throw refreshError;
-      setGame(updatedGame as GameWithLineups);
-      
+      if (updatedGame) {
+        setGame({
+          ...updatedGame,
+          homeTeamName: game.homeTeamName,
+          awayTeamName: game.awayTeamName,
+          game_lineups: updatedGame.game_lineups || []
+        });
+      }
     } catch (error) {
       console.error('Error updating lineup:', error);
       setError('Failed to update lineup');
@@ -132,12 +159,28 @@ export default function LiveGameContent({
         {
           event: '*',
           schema: 'public',
-          table: 'games',
-          filter: `id=eq.${game.id}`,
+          table: 'game_lineups',
+          filter: `game_id=eq.${game.id}`
         },
-        (payload) => {
-          console.log('Game updated:', payload);
-          setGame(payload.new as GameWithLineups);
+        async () => {
+          // Refresh game data when lineups change
+          const { data: updatedGame, error: refreshError } = await supabase
+            .from('games')
+            .select(`
+              *,
+              game_lineups (*)
+            `)
+            .eq('id', game.id)
+            .single();
+
+          if (!refreshError && updatedGame) {
+            setGame({
+              ...updatedGame,
+              homeTeamName: game.homeTeamName,
+              awayTeamName: game.awayTeamName,
+              game_lineups: updatedGame.game_lineups || []
+            });
+          }
         }
       )
       .subscribe();
@@ -206,9 +249,9 @@ export default function LiveGameContent({
           
           <TabsContent value="lineup">
             <LineupBuilder
-              gameId={game?.id || ''}
+              gameId={game.id}
               teamId={team.id}
-              players={initialPlayers}
+              players={frontendPlayers}
               previousGames={[]}
               initialLineup={initialLineup}
               onLineupChange={handleLineupChange}
@@ -216,7 +259,42 @@ export default function LiveGameContent({
           </TabsContent>
           
           <TabsContent value="roster">
-            <RosterView players={initialPlayers} />
+            <RosterView 
+              players={rosterPlayers}
+              onPlayerAvailabilityChange={async (playerId, available) => {
+                try {
+                  // Update database
+                  const { error: updateError } = await supabase
+                    .from('players')
+                    .update({ available })
+                    .eq('id', playerId);
+
+                  if (updateError) throw updateError;
+
+                  // Get the updated player from database
+                  const { data: updatedDbPlayer, error: fetchError } = await supabase
+                    .from('players')
+                    .select('*')
+                    .eq('id', playerId)
+                    .single();
+
+                  if (fetchError) throw fetchError;
+                  if (!updatedDbPlayer) throw new Error('Player not found');
+
+                  // Update both states
+                  setFrontendPlayers(prev => 
+                    prev.map(p => p.id === playerId ? toFrontendPlayer(updatedDbPlayer) : p)
+                  );
+                  setRosterPlayers(prev => 
+                    prev.map(p => p.id === playerId ? toRosterPlayer(updatedDbPlayer) : p)
+                  );
+                } catch (error) {
+                  console.error('Error updating player availability:', error);
+                  setError('Failed to update player availability');
+                }
+              }}
+              activeLineupPlayerIds={game.game_lineups?.map(gl => gl.player_id) || []}
+            />
           </TabsContent>
         </Tabs>
       </div>

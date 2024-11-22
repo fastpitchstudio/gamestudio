@@ -1,52 +1,52 @@
 // src/app/teams/[id]/live/page.tsx
-import { Suspense } from 'react'
-import { cookies } from 'next/headers'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Loader2 } from 'lucide-react'
-import { getInitialTeam } from '../actions'
-import LiveGameContent from '@/components/game/live/live-game-content'
-import type { Database } from '@/lib/types/database-types'
-import type { Game } from '@/lib/types/supabase'
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Loader2 } from 'lucide-react';
+import { getInitialTeam } from '../actions';
+import LiveGameContent from '@/components/game/live/live-game-content';
+import type { Database } from '@/lib/types/database-types';
+import type { Game, GameLineup } from '@/lib/types/supabase';
 
 /***********************
 // Next.js 13+ Dynamic Route Params Handling
-// Both params and searchParams must be treated as Promises
 ***********************/
 type PageProps = {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 };
 
 export interface GameWithLineups extends Game {
-  game_lineups?: Database['public']['Tables']['game_lineups']['Row'][];
+  game_lineups?: GameLineup[];
+  homeTeamName: string;
+  awayTeamName: string;
 }
 
 export default async function TeamLivePage({ 
   params,
   searchParams 
 }: PageProps): Promise<React.ReactElement> {
-  // First, await both params and searchParams
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([
-    params,
-    searchParams
-  ]);
-  const { id } = resolvedParams;
+  const { id } = params;
+  const gameId = typeof searchParams.game === 'string' ? searchParams.game : undefined;
   
   // Then handle Supabase client
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
-    // redirect('/login'); // This line is commented out because the redirect function is not defined in the provided code
+    throw new Error('Authentication required');
   }
 
   const team = await getInitialTeam(id);
+  if (!team) {
+    throw new Error('Team not found');
+  }
   
   // Try to find active game first
   let currentGame: GameWithLineups | null = null;
 
   // First check for game in URL
-  if (resolvedSearchParams.game) {
+  if (gameId) {
     const { data } = await supabase
       .from('games')
       .select(`
@@ -54,20 +54,25 @@ export default async function TeamLivePage({
         game_lineups (
           id,
           game_id,
-          team_id,
-          lineup,
-          substitutes,
-          notes,
+          player_id,
+          position,
+          batting_order,
+          inning,
           created_at,
           updated_at
         )
       `)
-      .eq('id', resolvedSearchParams.game)
+      .eq('id', gameId)
       .eq('team_id', id)
       .single();
 
     if (data) {
-      currentGame = data as GameWithLineups;
+      currentGame = {
+        ...data,
+        game_lineups: data.game_lineups || [],
+        homeTeamName: team.name,
+        awayTeamName: data.opponent || 'TBD'
+      };
     }
   }
 
@@ -80,10 +85,10 @@ export default async function TeamLivePage({
         game_lineups (
           id,
           game_id,
-          team_id,
-          lineup,
-          substitutes,
-          notes,
+          player_id,
+          position,
+          batting_order,
+          inning,
           created_at,
           updated_at
         )
@@ -95,7 +100,12 @@ export default async function TeamLivePage({
       .single();
 
     if (data) {
-      currentGame = data as GameWithLineups;
+      currentGame = {
+        ...data,
+        game_lineups: data.game_lineups || [],
+        homeTeamName: team.name,
+        awayTeamName: data.opponent || 'TBD'
+      };
     }
   }
 

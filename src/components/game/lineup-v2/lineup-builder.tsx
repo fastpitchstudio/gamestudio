@@ -4,6 +4,7 @@ import {
   DndContext,
   closestCenter,
   DragOverEvent,
+  DragEndEvent,
   Modifier,
   useSensor,
   useSensors,
@@ -24,21 +25,27 @@ import { SubstitutePlayer } from '@/types/lineup';
 import { useLineupManager } from '@/hooks/use-lineup-manager';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DroppableLineup } from './droppable-lineup';
+import { LineupSlot } from '@/types/lineup';
 
 interface SortableSubstituteProps {
   substitute: SubstitutePlayer;
   player: Player;
 }
 
-interface LineupItem {
-  id: string;
-  playerId: string;
-  position: Position | null;
-}
+interface LineupItem extends LineupSlot {}
 
 interface SubstituteItem {
   id: string;
   playerId: string;
+}
+
+interface LineupBuilderProps {
+  gameId: string;
+  teamId: string;
+  players: Player[];
+  previousGames?: Game[];
+  initialLineup?: LineupSlot[];
+  onLineupChange?: (lineup: LineupSlot[]) => Promise<void>;
 }
 
 function SortableSubstitute({ substitute, player }: SortableSubstituteProps) {
@@ -138,22 +145,32 @@ export function LineupBuilder({
   teamId,
   players,
   previousGames = [],
-}: {
-  gameId: string;
-  teamId: string;
-  players: Player[];
-  previousGames?: Game[];
-}) {
-  console.log('Debug:', { playersLength: players.length, previousGamesLength: previousGames.length });
-
+  initialLineup,
+  onLineupChange,
+}: LineupBuilderProps) {
   const {
-    roster,
     isLoading,
-    lineup = [],
+    lineup = initialLineup || [],
     substitutes = [],
-    updateLineup,
+    updateLineup: baseUpdateLineup,
     updateSubstitutes,
   } = useLineupManager({ gameId, teamId });
+
+  const updateLineup = async (newLineup: LineupSlot[]) => {
+    try {
+      // First update the local state
+      baseUpdateLineup(newLineup);
+      
+      // Then try to update the database if callback is provided
+      if (onLineupChange) {
+        await onLineupChange(newLineup);
+      }
+    } catch (error) {
+      console.error('Error in updateLineup:', error);
+      // Revert to previous state if database update fails
+      baseUpdateLineup(lineup);
+    }
+  };
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -170,7 +187,7 @@ export function LineupBuilder({
     
     return Array.from(positionCounts.entries())
       .filter(([_, count]) => count > 1)
-      .map(([position]) => position as Position);
+      .map(([position]) => position);
   }, [lineup]);
 
   const sensors = useSensors(
@@ -229,7 +246,7 @@ export function LineupBuilder({
     }
   };
 
-  const handleDragEnd = (event: DragOverEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
     setOverId(null);
@@ -240,14 +257,14 @@ export function LineupBuilder({
     const overType = over.data.current?.type || getSourceType(over.id.toString());
 
     if (sourceType === 'roster') {
-      const player = roster.find(p => p.id === active.id);
+      const player = players.find(p => p.id === active.id);
       if (!player) return;
 
       if (overType === 'lineup') {
-        const newSlot: LineupItem = {
+        const newSlot: LineupSlot = {
           id: `lineup-${Date.now()}`,
           playerId: player.id,
-          position: toPosition(player.primaryPosition),
+          position: player.primaryPosition ? toPosition(player.primaryPosition) : null,
         };
 
         if (over.id === 'lineup') {
@@ -295,10 +312,13 @@ export function LineupBuilder({
       if (!subItem) return;
 
       if (overType === 'lineup') {
-        const newSlot: LineupItem = {
+        const player = players.find(p => p.id === subItem.playerId);
+        if (!player) return;
+
+        const newSlot: LineupSlot = {
           id: `lineup-${Date.now()}`,
           playerId: subItem.playerId,
-          position: toPosition(roster.find(p => p.id === subItem.playerId)?.primaryPosition),
+          position: player.primaryPosition ? toPosition(player.primaryPosition) : null,
         };
 
         if (over.id === 'lineup') {
@@ -323,7 +343,7 @@ export function LineupBuilder({
     setOverId(null);
   };
 
-  if (isLoading || !roster) {
+  if (isLoading || !players) {
     return (
       <div className="grid grid-cols-[300px_1fr] gap-4">
         <Skeleton className="h-24" />
@@ -346,7 +366,7 @@ export function LineupBuilder({
         <div className="space-y-4">
           <DroppableLineup
             lineup={lineup}
-            roster={roster}
+            roster={players}
             onPositionChange={(id, position) => {
               // Handle undefined position by converting to null
               const newLineup = lineup.map(item =>
@@ -370,7 +390,7 @@ export function LineupBuilder({
             <h2 className="font-semibold mb-2">Substitutes</h2>
             <SubstitutesList
               substitutes={substitutes}
-              roster={roster}
+              roster={players}
               isOver={overId === 'substitutes'}
             />
           </Card>
@@ -380,7 +400,7 @@ export function LineupBuilder({
           <Card className="p-4 space-y-2">
             <h2 className="font-semibold">Roster</h2>
             <div className="space-y-2">
-              {roster.map((player) => {
+              {players.map((player) => {
                 const isInLineup = lineup.some(slot => slot.playerId === player.id);
                 const isSubstitute = substitutes.some(sub => sub.playerId === player.id);
                 
@@ -407,12 +427,12 @@ export function LineupBuilder({
               let player;
               if (activeId.toString().startsWith('lineup-')) {
                 const lineupItem = lineup.find(item => item.id === activeId);
-                player = lineupItem ? roster.find(p => p.id === lineupItem.playerId) : null;
+                player = lineupItem ? players.find(p => p.id === lineupItem.playerId) : null;
               } else if (activeId.toString().startsWith('sub-')) {
                 const subItem = substitutes.find(item => item.id === activeId);
-                player = subItem ? roster.find(p => p.id === subItem.playerId) : null;
+                player = subItem ? players.find(p => p.id === subItem.playerId) : null;
               } else {
-                player = roster.find(p => p.id === activeId);
+                player = players.find(p => p.id === activeId);
               }
 
               if (!player) return null;

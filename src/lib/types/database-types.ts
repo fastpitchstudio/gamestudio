@@ -321,30 +321,30 @@ export interface Database {
         Row: {
           id: string
           game_id: string
-          team_id: string
-          lineup: Json
-          substitutes: Json
-          notes: string | null
+          player_id: string
+          position: string | null
+          batting_order: number | null
+          inning: number
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           game_id: string
-          team_id: string
-          lineup?: Json
-          substitutes?: Json
-          notes?: string | null
+          player_id: string
+          position?: string | null
+          batting_order?: number | null
+          inning?: number
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           game_id?: string
-          team_id?: string
-          lineup?: Json
-          substitutes?: Json
-          notes?: string | null
+          player_id?: string
+          position?: string | null
+          batting_order?: number | null
+          inning?: number
           created_at?: string
           updated_at?: string
         }
