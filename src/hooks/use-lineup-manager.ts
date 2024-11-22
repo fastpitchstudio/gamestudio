@@ -73,6 +73,16 @@ export const useLineupManager = ({
 
       // Save lineup and substitutes
       if (data.lineup) {
+        // First, delete existing lineup entries for this game and inning
+        const { error: deleteError } = await supabase
+          .from('game_lineups')
+          .delete()
+          .eq('game_id', gameId)
+          .eq('inning', 1); // Default to first inning
+
+        if (deleteError) throw deleteError;
+
+        // Then insert new lineup entries
         const lineupEntries = data.lineup.map((slot: LineupSlot) => ({
           game_id: gameId,
           player_id: slot.player.id,
@@ -85,7 +95,7 @@ export const useLineupManager = ({
 
         const { error: lineupError } = await supabase
           .from('game_lineups')
-          .upsert(lineupEntries);
+          .insert(lineupEntries);
 
         if (lineupError) throw lineupError;
       }
@@ -148,9 +158,76 @@ export const useLineupManager = ({
 
   // Create a debounced save function for auto-saving
   const debouncedSave = useCallback(
-    () => debounce(() => saveData(), autoSaveDelay),
+    debounce((data: { lineup: LineupSlot[], substitutes: SubstitutePlayer[] }) => saveData(data), autoSaveDelay),
     [saveData, autoSaveDelay]
   );
+
+  useEffect(() => {
+    if (lineup && substitutes) {
+      debouncedSave({ lineup, substitutes });
+    }
+  }, [lineup, substitutes, debouncedSave]);
+
+  // Update functions
+  const updateLineup = useCallback((newLineup: LineupSlot[]) => {
+    console.log('Updating lineup:', newLineup);
+    setLineup(newLineup);
+    setHasPendingChanges(true);
+    pendingChanges.current.add('lineup');
+    
+    if (gameId === 'new') {
+      console.log('New game - updating local state only');
+      return;
+    }
+    
+    debouncedSave({ lineup: newLineup, substitutes });
+  }, [gameId, debouncedSave, setLineup, setHasPendingChanges, substitutes]);
+
+  const updateSubstitutes = useCallback((newSubstitutes: SubstitutePlayer[]) => {
+    console.log('Updating substitutes:', newSubstitutes);
+    setSubstitutes(newSubstitutes);
+    setHasPendingChanges(true);
+    pendingChanges.current.add('substitutes');
+    
+    if (gameId === 'new') {
+      console.log('New game - updating local state only');
+      return;
+    }
+    
+    debouncedSave({ lineup, substitutes: newSubstitutes });
+  }, [gameId, debouncedSave, setSubstitutes, setHasPendingChanges, lineup]);
+
+  const updatePlayerAvailability = useCallback((newAvailability: PlayerAvailability[]) => {
+    console.log('Updating player availability:', newAvailability);
+    setAvailability(newAvailability);
+    setHasPendingChanges(true);
+    pendingChanges.current.add('availability');
+    
+    if (gameId === 'new') {
+      console.log('New game - updating local state only');
+      return;
+    }
+    
+    saveData({ availability: newAvailability });
+  }, [gameId, saveData, setAvailability, setHasPendingChanges]);
+
+  const loadPreviousLineups = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('game_lineups')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error loading previous lineups:', error);
+      toast.error('Failed to load previous lineups');
+      return [];
+    }
+  }, [teamId, supabase]);
 
   useEffect(() => {
     const loadGameState = async () => {
@@ -219,67 +296,6 @@ export const useLineupManager = ({
 
     loadGameState();
   }, [gameId, teamId, supabase]);
-
-  // Update functions
-  const updateLineup = useCallback((newLineup: LineupSlot[]) => {
-    console.log('Updating lineup:', newLineup);
-    setLineup(newLineup);
-    setHasPendingChanges(true);
-    pendingChanges.current.add('lineup');
-    
-    if (gameId === 'new') {
-      console.log('New game - updating local state only');
-      return;
-    }
-    
-    debouncedSave();
-  }, [gameId, debouncedSave, setLineup, setHasPendingChanges]);
-
-  const updateSubstitutes = useCallback((newSubstitutes: SubstitutePlayer[]) => {
-    console.log('Updating substitutes:', newSubstitutes);
-    setSubstitutes(newSubstitutes);
-    setHasPendingChanges(true);
-    pendingChanges.current.add('substitutes');
-    
-    if (gameId === 'new') {
-      console.log('New game - updating local state only');
-      return;
-    }
-    
-    debouncedSave();
-  }, [gameId, debouncedSave, setSubstitutes, setHasPendingChanges]);
-
-  const updatePlayerAvailability = useCallback((newAvailability: PlayerAvailability[]) => {
-    console.log('Updating player availability:', newAvailability);
-    setAvailability(newAvailability);
-    setHasPendingChanges(true);
-    pendingChanges.current.add('availability');
-    
-    if (gameId === 'new') {
-      console.log('New game - updating local state only');
-      return;
-    }
-    
-    debouncedSave();
-  }, [gameId, debouncedSave, setAvailability, setHasPendingChanges]);
-
-  const loadPreviousLineups = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('game_lineups')
-        .select('*')
-        .eq('team_id', teamId)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error loading previous lineups:', error);
-      toast.error('Failed to load previous lineups');
-      return [];
-    }
-  }, [teamId, supabase]);
 
   return {
     isLoading,
