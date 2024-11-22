@@ -376,7 +376,6 @@ export function LineupBuilder({
         <div className="space-y-4">
           <DroppableLineup
             lineup={lineup}
-            roster={players}
             onPositionChange={(id, position) => {
               // Handle undefined position by converting to null
               const newLineup = lineup.map(item =>

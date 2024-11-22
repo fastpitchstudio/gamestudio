@@ -17,7 +17,6 @@ import { X } from 'lucide-react';
 
 interface DroppableLineupProps {
   lineup: LineupSlot[];
-  roster: Player[];
   onPositionChange: (slotId: string, position: Position) => void;
   onRemove: (slotId: string) => void;
   _onReorder: (newLineup: LineupSlot[]) => void;
@@ -149,7 +148,6 @@ function DroppableEndPosition({ index, overId }: DroppableEndPositionProps) {
 
 export function DroppableLineup({
   lineup,
-  roster,
   onPositionChange,
   onRemove,
   _onReorder,
