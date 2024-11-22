@@ -2,12 +2,12 @@
 
 import { useDroppable } from '@dnd-kit/core';
 import { Player } from '@/types/player';
-import { SubstituteItem } from '@/types/lineup';
+import { SubstitutePlayer } from '@/types/lineup';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
 interface SubstitutesListProps {
-  substitutes: SubstituteItem[];
+  substitutes: SubstitutePlayer[];
   roster: Player[];
   isOver: boolean;
   onRemoveSubstitute?: (id: string) => void;
